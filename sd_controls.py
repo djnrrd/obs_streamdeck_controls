@@ -82,7 +82,7 @@ def do_action(action):
         mute_mic_audio()
     elif action == 'mute_desk':
         mute_desktop_audio()
-    elif action == 'mute_desk':
+    elif action == 'mute_all':
         mute_both_audio()
     else:
         set_scene(action)
