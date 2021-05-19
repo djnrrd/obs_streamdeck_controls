@@ -9,7 +9,9 @@ loop = asyncio.get_event_loop()
 
 def add_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['start_stop', 'mute', 'holding_page',
+    parser.add_argument('action', choices=['start_stop', 'mute_mic',
+                                           'mute_desk', 'mute_all',
+                                           'holding_page',
                                            'full_cam', '4x3', '16x9',
                                            'cat_cam'])
     return parser
@@ -76,8 +78,12 @@ def start_stop_stream():
 def do_action(action):
     if action == 'start_stop':
         start_stop_stream()
-    elif action == 'mute':
-        mute_audio()
+    elif action == 'mute_mic':
+        mute_mic_audio()
+    elif action == 'mute_desk':
+        mute_desktop_audio()
+    elif action == 'mute_desk':
+        mute_both_audio()
     else:
         set_scene(action)
 
