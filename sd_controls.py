@@ -54,7 +54,7 @@ async def _ws_start_stop_stream():
 
 
 def mute_desktop_audio():
-    loop.run_until_complete(_ws_toggle_mute('Desktop Audio'))
+    loop.run_until_complete(_ws_toggle_mute('pulse_obs_sink'))
 
 
 def mute_mic_audio():
@@ -62,8 +62,9 @@ def mute_mic_audio():
 
 
 def mute_both_audio():
-    for source in ('Desktop Audio', 'Mic/Aux'):
+    for source in ('pulse_obs_sink', 'Mic/Aux'):
         loop.run_until_complete(_ws_toggle_mute(source))
+
 
 def set_scene(scene):
     lookup = {'holding_page': 'Holding Page', 'full_cam': 'Full Cam',
