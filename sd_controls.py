@@ -13,7 +13,7 @@ def add_args():
                                            'mute_desk', 'mute_all',
                                            'holding_page',
                                            'full_cam', '4x3', '16x9',
-                                           'cat_cam'])
+                                           'cat_cam', 'mute_spotify', 'tts'])
     return parser
 
 
@@ -61,6 +61,10 @@ def mute_mic_audio():
     loop.run_until_complete(_ws_toggle_mute('Mic/Aux'))
 
 
+def mute_spotify_audio():
+    loop.run_until_complete(_ws_toggle_mute('pulse_spotify_sink'))
+
+
 def mute_both_audio():
     for source in ('pulse_obs_sink', 'Mic/Aux'):
         loop.run_until_complete(_ws_toggle_mute(source))
@@ -68,7 +72,8 @@ def mute_both_audio():
 
 def set_scene(scene):
     lookup = {'holding_page': 'Holding Page', 'full_cam': 'Full Cam',
-              '4x3': '4 x 3 Game', '16x9': '16 x 9 Game', 'cat_cam': 'Cat Cam'}
+              '4x3': '4 x 3 Game', '16x9': '16 x 9 Game', 'cat_cam': 'Cat Cam',
+              'tts': 'TTS / Multiplayer'}
     loop.run_until_complete(_ws_set_scene(lookup[scene]))
 
 
@@ -85,6 +90,8 @@ def do_action(action):
         mute_desktop_audio()
     elif action == 'mute_all':
         mute_both_audio()
+    elif action == 'mute_spotify':
+        mute_spotify_audio()
     else:
         set_scene(action)
 
