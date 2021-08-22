@@ -1,3 +1,5 @@
 /venv/
 /sd_controls.ini
 /docs/build/
+/obs_streamdeck_controls.egg-info/
+/build/

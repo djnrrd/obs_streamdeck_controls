@@ -1,52 +1,18 @@
 import asyncio
 import simpleobsws
-import argparse
-from configparser import ConfigParser
-from os import path
 
-work_dir = path.dirname(path.abspath(__file__))
-config_file = path.join(work_dir, 'sd_controls.ini')
-config = ConfigParser()
-config.read(config_file)
-
-ws = simpleobsws.obsws(password=config['obs']['obsws_password'])
-
-loop = asyncio.get_event_loop()
+# Setup the asyncio event loop as a global, the simpleobsws library crashes
+# if you use asyncio.run and prefers to use the lower level get_event_loop API
+LOOP = asyncio.get_event_loop()
 
 
-def _add_args():
-    """Set up the script arguments using argparser
-
-    :return: The argparse parser object
-    :rtype: argparse.ArgumentParser
-    """
-    parser = argparse.ArgumentParser()
-    sub_parser = parser.add_subparsers(dest='action', required=True)
-    sub_parser.add_parser('start_stop', description='Start/Stop the stream')
-    sub_parser.add_parser('mute_mic',
-                          description='Mute/Unmute the Microphone source')
-    sub_parser.add_parser('mute_desk',
-                          description='Mute/Unmute the Desktop audio source')
-    sub_parser.add_parser('mute_all',
-                          description='Mute/Unmute both Desktop and Microphone '
-                                      'sources')
-    sub_parser.add_parser('panic_button',
-                          description='Disable/Enable alert sources in case of '
-                                      'hate raids')
-    scene_parser = sub_parser.add_parser('scene',
-                                         description='Switch between scenes in '
-                                                     'OBS')
-    scene_parser.add_argument('scene_number', type=int,
-                              help='The scene number to select (from the top '
-                                   'down)')
-    return parser
-
-
-async def _ws_toggle_mute(source):
+async def _ws_toggle_mute(source, ws):
     """Use the OBS-Websocket to mute/unmute an audio source
 
     :param source: The OBS audio source to mute/unmute
     :type source: str
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
     """
     # Make the connection to obs-websocket
     await ws.connect()
@@ -58,9 +24,11 @@ async def _ws_toggle_mute(source):
     await ws.disconnect()
 
 
-async def _ws_get_scene_list():
+async def _ws_get_scene_list(ws):
     """Use the OBS-Websocket to get the list of scenes
 
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
     :return: The currently active scene and an ordered list of all scenes
         configured in OBS
     :rtype: dict
@@ -75,11 +43,13 @@ async def _ws_get_scene_list():
     return result
 
 
-async def _ws_set_scene(scene):
+async def _ws_set_scene(scene, ws):
     """Use the OBS-Websocket to set the current scene
 
     :param scene: The name of the scene in OBS to make active
     :type scene: str
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
     """
     # Make the connection to obs-websocket
     await ws.connect()
@@ -91,8 +61,11 @@ async def _ws_set_scene(scene):
     await ws.disconnect()
 
 
-async def _ws_start_stop_stream():
+async def _ws_start_stop_stream(ws):
     """Use the OBS-Websocket to start or stop streaming
+
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
     """
     # Make the connection to obs-websocket
     await ws.connect()
@@ -103,11 +76,13 @@ async def _ws_start_stop_stream():
     await ws.disconnect()
 
 
-async def _ws_get_source_settings(source):
+async def _ws_get_source_settings(source, ws):
     """Use the OBS-Websocket to get the settings for a source
 
     :param source: The OBS source to get the settings for
     :type source: str
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
     :return: Details on the source name, type and the settings for the source
     :rtype: dict
     """
@@ -122,7 +97,7 @@ async def _ws_get_source_settings(source):
     return result
 
 
-async def _ws_set_source_settings(source, settings):
+async def _ws_set_source_settings(source, settings, ws):
     """Use the OBS-Websocket to set new settings for a source
 
     :param source: The OBS source to update
@@ -131,6 +106,8 @@ async def _ws_set_source_settings(source, settings):
         format as the sourceSettings section returned from
         _ws_get_source_settings
     :type settings: dict
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
     :return: Details on the source name, type and the updated settings for the
         source
     :rtype: dict
@@ -146,47 +123,69 @@ async def _ws_set_source_settings(source, settings):
     return result
 
 
-def mute_desktop_audio():
+def mute_desktop_audio(config, ws):
     """Mute/Unmute the Desktop audio source as configured in sd_controls.ini
+
+    :param config: ConfigParser object created in cli_tools
+    :type config: ConfigParser
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws:  simpleobsws.obsws
     """
-    loop.run_until_complete(_ws_toggle_mute(config['obs']['desktop_source']))
+    LOOP.run_until_complete(
+        _ws_toggle_mute(config['obs']['desktop_source'], ws))
 
 
-def mute_mic_audio():
+def mute_mic_audio(config, ws):
     """Mute/Unmute the Microphone audio source as configured in sd_controls.ini
+
+    :param config: ConfigParser object created in cli_tools
+    :type config: ConfigParser
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws:  simpleobsws.obsws
     """
-    loop.run_until_complete(_ws_toggle_mute(config['obs']['mic_source']))
+    LOOP.run_until_complete(_ws_toggle_mute(config['obs']['mic_source'], ws))
 
 
-def mute_both_audio():
+def mute_both_audio(config, ws):
     """Mute/Unmute both Desktop and Microphone audio sources as configured in
     sd_controls.ini
+
+    :param config: ConfigParser object created in cli_tools
+    :type config: ConfigParser
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws:  simpleobsws.obsws
     """
     for source in (config['obs']['mic_source'],
                    config['obs']['desktop_source']):
-        loop.run_until_complete(_ws_toggle_mute(source))
+        LOOP.run_until_complete(_ws_toggle_mute(source, ws))
 
 
-def set_scene(scene_number):
+def set_scene(ws, scene_number):
     """Set the active scene in OBS using the number of the scene as counted
     from the top down of the scene list in OBS
 
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws:  simpleobsws.obsws
     :param scene_number: The scene number to make active
     :type scene_number: int
     """
-    scene_list = loop.run_until_complete(_ws_get_scene_list())
+    scene_list = LOOP.run_until_complete(_ws_get_scene_list(ws))
     # Adjust for zero indexing
     scene_number = scene_number - 1
     new_scene = scene_list['scenes'][scene_number]['name']
-    loop.run_until_complete(_ws_set_scene(new_scene))
+    LOOP.run_until_complete(_ws_set_scene(new_scene, ws))
 
 
-def start_stop_stream():
-    """Start/Stop the stream"""
-    loop.run_until_complete(_ws_start_stop_stream())
+def start_stop_stream(ws):
+    """Start/Stop the stream
+
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws:  simpleobsws.obsws
+    """
+    LOOP.run_until_complete(_ws_start_stop_stream(ws))
 
 
-def panic_button():
+def panic_button(config, ws):
     """Sadly, people are performing "hate raids" on twitch, raiding channels
     and getting bot accounts to follow the streamer and spam chat with
     hateful messages.
@@ -199,6 +198,10 @@ def panic_button():
     or "Followers only mode" (based on follow duration) to block hateful
     messages in chat.
 
+    :param config: ConfigParser object created in cli_tools
+    :type config: ConfigParser
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
     :raises ValueError: If there is a conflict between either the saved URL for
         the source, or the invalid.lan address that temporarily overwrites
         the source's URL.
@@ -206,14 +209,12 @@ def panic_button():
     # Loop through configured alert sources
     for source in config['obs']['alert_sources'].split(':'):
         # Get the current settings for the alert source.
-        settings = loop.run_until_complete(_ws_get_source_settings(source))
+        settings = LOOP.run_until_complete(_ws_get_source_settings(source, ws))
         settings = settings['sourceSettings']
         # check if the source url is saved to the ini file, if not assume
-        # this is the first time we've run this and save it
+        # this is the first time we've run this and create it
         if not config.has_option('obs_browser_sources', source):
             config['obs_browser_sources'][source] = settings['url']
-            with open(config_file, 'w') as f:
-                config.write(f)
         # Swap Browser source between saved URl and invalid.lan
         if settings['url'] == config['obs_browser_sources'][source]:
             settings['url'] = 'http://invalid.lan'
@@ -230,38 +231,5 @@ def panic_button():
         else:
             settings['reroute_audio'] = True
         # Update the settings and mute the sources.
-        loop.run_until_complete(_ws_set_source_settings(source, settings))
-        loop.run_until_complete(_ws_toggle_mute(source))
-
-
-def _do_action(arg):
-    """Check the command line arguments and run the appropriate function
-
-    :param arg: The command line arguments as gathered by argparser
-    :type arg: argparse.ArgumentParser
-    """
-    if arg.action == 'panic_button':
-        panic_button()
-    elif arg.action == 'start_stop':
-        start_stop_stream()
-    elif arg.action == 'mute_mic':
-        mute_mic_audio()
-    elif arg.action == 'mute_desk':
-        mute_desktop_audio()
-    elif arg.action == 'mute_all':
-        mute_both_audio()
-    elif arg.action == 'scene':
-        set_scene(arg.scene_number)
-    else:
-        raise ValueError('Could not find a valid action from the command line '
-                         'arguments')
-
-
-def main():
-    parser = _add_args()
-    arg = parser.parse_args()
-    _do_action(arg)
-
-
-if __name__ == '__main__':
-    main()
+        LOOP.run_until_complete(_ws_set_source_settings(source, settings, ws))
+        LOOP.run_until_complete(_ws_toggle_mute(source, ws))

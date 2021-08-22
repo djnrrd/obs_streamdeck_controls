@@ -33,6 +33,9 @@ Streamlabs OBS/SLOBS is *not* supported
 Downloading
 ***********
 
+From git
+--------
+
 Clone the git repository to obtain the main branch::
 
     git clone https://github.com/djnrrd/obs_streamdeck_controls.git
@@ -40,37 +43,36 @@ Clone the git repository to obtain the main branch::
 Installing
 **********
 
-Currently this program is designed to work in a virtual environment with a
-shell script as a wrapper.
+Change directory into the downloaded folder and install locally via pip. It
+is recommended that you use the --user flag to install in your user directory.::
 
-Preparing the virtual environment
----------------------------------
+   cd obs_streamdeck_controls
+   pip install --user --use-feature=in-tree-build .
 
-::
+This will install the command line program ``obs-streamdeck-ctl`` to your
+``$HOME/.local/bin`` folder. Add::
 
-    cd obs_streamdeck_controls
-    chmod +x sd_controls.sh
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install --upgrade pip
-    pip install --upgrade setuptools
-    pip install simpleobsws
+   PATH=$PATH:$HOME/.local/bin
 
-Preparing the ini file
-----------------------
+to your ``.bashrc`` file, if you haven't already.
 
-* Copy sd_controls.ini.example to sd_controls.ini
-* Update obsws_password to use your password for OBS WebSockets
-* Update mic_source and desktop_source if required
-* Update alert_sources to match the Browser sources that are used for your alert overlays.  Multiple sources can be separated with a colon (:)
+Initial Setup
+-------------
+
+After installing OBS Streamdeck Controls you will need to provide information
+regarding your OBS WebSockets password, and names of your Microphone, Desktop,
+and alert overlay sources.  Run the setup wizard on a terminal with the
+following command::
+
+   obs-streamdeck-ctl setup
 
 Usage
 =====
 
 ::
 
-    $ ./sd_controls.sh -h
-    usage: sd_controls.py [-h]
+    $ ./obs-streamdeck-ctl -h
+    usage: obs-streamdeck-ctl [-h]
                       {start_stop,mute_mic,mute_desk,mute_all,panic_button,scene}
                       ...
 
@@ -80,8 +82,8 @@ Usage
     optional arguments:
        -h, --help            show this help message and exit
 
-    $ ./sd_controls scene -h
-    usage: sd_controls.py scene [-h] scene_number
+    $ ./obs-streamdeck-ctl scene -h
+    usage: obs-streamdeck-ctl scene [-h] scene_number
 
     positional arguments:
        scene_number
