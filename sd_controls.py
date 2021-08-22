@@ -195,7 +195,7 @@ def panic_button():
     so this function will disable and re-enable those overlays as configured
     in sd_controls.ini
 
-    :todo: Integrate with twitch APIs to set chat to "Subscriber only mode"
+    TODO Integrate with twitch APIs to set chat to "Subscriber only mode"
     or "Followers only mode" (based on follow duration) to block hateful
     messages in chat.
 
@@ -234,7 +234,7 @@ def panic_button():
         loop.run_until_complete(_ws_toggle_mute(source))
 
 
-def do_action(arg):
+def _do_action(arg):
     """Check the command line arguments and run the appropriate function
 
     :param arg: The command line arguments as gathered by argparser
@@ -260,7 +260,7 @@ def do_action(arg):
 def main():
     parser = _add_args()
     arg = parser.parse_args()
-    do_action(arg)
+    _do_action(arg)
 
 
 if __name__ == '__main__':
