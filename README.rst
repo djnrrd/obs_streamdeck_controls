@@ -40,6 +40,12 @@ Clone the git repository to obtain the main branch::
 
     git clone https://github.com/djnrrd/obs_streamdeck_controls.git
 
+From releases
+-------------
+
+Download the required release from the `releases page <https://github
+.com/djnrrd/obs_streamdeck_controls/releases>`_
+
 Installing
 **********
 
