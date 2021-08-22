@@ -1,18 +1,18 @@
 import asyncio
 import simpleobsws
-import argparse
 from configparser import ConfigParser
 from appdirs import user_config_dir
 from os import path
 
-config_dir = user_config_dir('obs-streamdeck-ctl')
-config_file = path.join(config_dir, 'obs-streamdeck.ini')
-config = ConfigParser()
-config.read(config_file)
 
-ws = simpleobsws.obsws(password=config['obs']['obsws_password'])
+def _read_config():
+    """Read the config file from the user config directory and return the
+    ConfigParser obect
 
-loop = asyncio.get_event_loop()
+    :return: The ConfigParser object
+    :rtype: ConfigParser
+    """
+
 
 
 async def _ws_toggle_mute(source):
@@ -22,13 +22,13 @@ async def _ws_toggle_mute(source):
     :type source: str
     """
     # Make the connection to obs-websocket
-    await ws.connect()
+    await WS.connect()
     data = {'source': source}
-    await ws.call('ToggleMute', data)
+    await WS.call('ToggleMute', data)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
-    await ws.disconnect()
+    await WS.disconnect()
 
 
 async def _ws_get_scene_list():
@@ -39,12 +39,12 @@ async def _ws_get_scene_list():
     :rtype: dict
     """
     # Make the connection to obs-websocket
-    await ws.connect()
-    result = await ws.call('GetSceneList')
+    await WS.connect()
+    result = await WS.call('GetSceneList')
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
-    await ws.disconnect()
+    await WS.disconnect()
     return result
 
 
@@ -55,25 +55,25 @@ async def _ws_set_scene(scene):
     :type scene: str
     """
     # Make the connection to obs-websocket
-    await ws.connect()
+    await WS.connect()
     data = {'scene-name': scene}
-    await ws.call('SetCurrentScene', data)
+    await WS.call('SetCurrentScene', data)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
-    await ws.disconnect()
+    await WS.disconnect()
 
 
 async def _ws_start_stop_stream():
     """Use the OBS-Websocket to start or stop streaming
     """
     # Make the connection to obs-websocket
-    await ws.connect()
-    await ws.call('StartStopStreaming')
+    await WS.connect()
+    await WS.call('StartStopStreaming')
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
-    await ws.disconnect()
+    await WS.disconnect()
 
 
 async def _ws_get_source_settings(source):
@@ -85,13 +85,13 @@ async def _ws_get_source_settings(source):
     :rtype: dict
     """
     # Make the connection to obs-websocket
-    await ws.connect()
+    await WS.connect()
     data = {'sourceName': source}
-    result = await ws.call('GetSourceSettings', data)
+    result = await WS.call('GetSourceSettings', data)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
-    await ws.disconnect()
+    await WS.disconnect()
     return result
 
 
@@ -109,35 +109,35 @@ async def _ws_set_source_settings(source, settings):
     :rtype: dict
     """
     # Make the connection to obs-websocket
-    await ws.connect()
+    await WS.connect()
     data = {'sourceName': source, 'sourceSettings': settings}
-    result = await ws.call('SetSourceSettings', data)
+    result = await WS.call('SetSourceSettings', data)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
-    await ws.disconnect()
+    await WS.disconnect()
     return result
 
 
 def mute_desktop_audio():
     """Mute/Unmute the Desktop audio source as configured in sd_controls.ini
     """
-    loop.run_until_complete(_ws_toggle_mute(config['obs']['desktop_source']))
+    LOOP.run_until_complete(_ws_toggle_mute(CONFIG['obs']['desktop_source']))
 
 
 def mute_mic_audio():
     """Mute/Unmute the Microphone audio source as configured in sd_controls.ini
     """
-    loop.run_until_complete(_ws_toggle_mute(config['obs']['mic_source']))
+    LOOP.run_until_complete(_ws_toggle_mute(CONFIG['obs']['mic_source']))
 
 
 def mute_both_audio():
     """Mute/Unmute both Desktop and Microphone audio sources as configured in
     sd_controls.ini
     """
-    for source in (config['obs']['mic_source'],
-                   config['obs']['desktop_source']):
-        loop.run_until_complete(_ws_toggle_mute(source))
+    for source in (CONFIG['obs']['mic_source'],
+                   CONFIG['obs']['desktop_source']):
+        LOOP.run_until_complete(_ws_toggle_mute(source))
 
 
 def set_scene(scene_number):
@@ -147,16 +147,16 @@ def set_scene(scene_number):
     :param scene_number: The scene number to make active
     :type scene_number: int
     """
-    scene_list = loop.run_until_complete(_ws_get_scene_list())
+    scene_list = LOOP.run_until_complete(_ws_get_scene_list())
     # Adjust for zero indexing
     scene_number = scene_number - 1
     new_scene = scene_list['scenes'][scene_number]['name']
-    loop.run_until_complete(_ws_set_scene(new_scene))
+    LOOP.run_until_complete(_ws_set_scene(new_scene))
 
 
 def start_stop_stream():
     """Start/Stop the stream"""
-    loop.run_until_complete(_ws_start_stop_stream())
+    LOOP.run_until_complete(_ws_start_stop_stream())
 
 
 def panic_button():
@@ -177,21 +177,21 @@ def panic_button():
         the source's URL.
     """
     # Loop through configured alert sources
-    for source in config['obs']['alert_sources'].split(':'):
+    for source in CONFIG['obs']['alert_sources'].split(':'):
         # Get the current settings for the alert source.
-        settings = loop.run_until_complete(_ws_get_source_settings(source))
+        settings = LOOP.run_until_complete(_ws_get_source_settings(source))
         settings = settings['sourceSettings']
         # check if the source url is saved to the ini file, if not assume
         # this is the first time we've run this and save it
-        if not config.has_option('obs_browser_sources', source):
-            config['obs_browser_sources'][source] = settings['url']
-            with open(config_file, 'w') as f:
-                config.write(f)
+        if not CONFIG.has_option('obs_browser_sources', source):
+            CONFIG['obs_browser_sources'][source] = settings['url']
+            with open(CONFIG_FILE, 'w') as f:
+                CONFIG.write(f)
         # Swap Browser source between saved URl and invalid.lan
-        if settings['url'] == config['obs_browser_sources'][source]:
+        if settings['url'] == CONFIG['obs_browser_sources'][source]:
             settings['url'] = 'http://invalid.lan'
         elif settings['url'] == 'http://invalid.lan':
-            settings['url'] = config['obs_browser_sources'][source]
+            settings['url'] = CONFIG['obs_browser_sources'][source]
         else:
             raise ValueError('Browser source matches neither the saved value '
                              'in the ini file or \'http://invalid.lan/\'')
@@ -203,28 +203,17 @@ def panic_button():
         else:
             settings['reroute_audio'] = True
         # Update the settings and mute the sources.
-        loop.run_until_complete(_ws_set_source_settings(source, settings))
-        loop.run_until_complete(_ws_toggle_mute(source))
+        LOOP.run_until_complete(_ws_set_source_settings(source, settings))
+        LOOP.run_until_complete(_ws_toggle_mute(source))
 
+# Globals for sd_controls and cli_tools
+CONFIG_DIR = user_config_dir('obs-streamdeck-ctl')
+CONFIG_FILE = path.join(CONFIG_DIR, 'obs-streamdeck.ini')
+CONFIG = ConfigParser()
+CONFIG.read(CONFIG_FILE)
 
-def _do_action(arg):
-    """Check the command line arguments and run the appropriate function
-
-    :param arg: The command line arguments as gathered by argparser
-    :type arg: argparse.ArgumentParser
-    """
-    if arg.action == 'panic_button':
-        panic_button()
-    elif arg.action == 'start_stop':
-        start_stop_stream()
-    elif arg.action == 'mute_mic':
-        mute_mic_audio()
-    elif arg.action == 'mute_desk':
-        mute_desktop_audio()
-    elif arg.action == 'mute_all':
-        mute_both_audio()
-    elif arg.action == 'scene':
-        set_scene(arg.scene_number)
-    else:
-        raise ValueError('Could not find a valid action from the command line '
-                         'arguments')
+if CONFIG.has_option('obs', 'obsws_password'):
+    WS = simpleobsws.obsws(password=CONFIG['obs']['obsws_password'])
+else:
+    WS = simpleobsws.obsws()
+LOOP = asyncio.get_event_loop()
