@@ -3,8 +3,8 @@ from setuptools import setup
 setup(
     name='obs_streamdeck_controls',
     version='0.0.1',
-    install_requires=['simpleobsws, appdirs'],
-    packages=[''],
+    install_requires=['simpleobsws', 'appdirs'],
+    packages=['sd_controls'],
     entry_points={
         'console_scripts': ['obs-streamdeck-ctl=sd_controls.cli_tools:main']
     },
