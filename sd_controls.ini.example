@@ -1,0 +1,10 @@
+[obs]
+obsws_password = OBSWS_PASSWORD
+mic_source = Mic/Aux
+desktop_source = Desktop Audio
+alert_sources = streamlabs_alerts:soundalerts_source
+; Multiple alert sources can be used, separated by a :
+
+[obs_browser_sources]
+; Leave blank, script will determine these values on first run
+
