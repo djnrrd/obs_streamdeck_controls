@@ -1,6 +1,6 @@
-=======================
+#######################
 OBS Streamdeck Controls
-=======================
+#######################
 
 Introduction
 ============
@@ -27,7 +27,8 @@ Requirements
 * Python >= 3.6
 * Pip and Internet access
 * `OBS WebSockets API <https://github.com/Palakis/obs-websocket>`_
-(Streamlabs OBS/SLOBS is *not* supported)
+
+Streamlabs OBS/SLOBS is *not* supported
 
 Downloading
 ***********
@@ -61,8 +62,7 @@ Preparing the ini file
 * Copy sd_controls.ini.example to sd_controls.ini
 * Update obsws_password to use your password for OBS WebSockets
 * Update mic_source and desktop_source if required
-* Update alert_sources to match the Browser sources that are used for your
-alert overlays.  Multiple sources can be separated with a colon (:)
+* Update alert_sources to match the Browser sources that are used for your alert overlays.  Multiple sources can be separated with a colon (:)
 
 Usage
 =====

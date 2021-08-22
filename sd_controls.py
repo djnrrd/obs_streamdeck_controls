@@ -10,10 +10,16 @@ config = ConfigParser()
 config.read(config_file)
 
 ws = simpleobsws.obsws(password=config['obs']['obsws_password'])
+
 loop = asyncio.get_event_loop()
 
 
-def add_args():
+def _add_args():
+    """Set up the script arguments using argparser
+
+    :return: The argparse parser object
+    :rtype: argparse.ArgumentParser
+    """
     parser = argparse.ArgumentParser()
     sub_parser = parser.add_subparsers(dest='action', required=True)
     sub_parser.add_parser('start_stop', description='Start/Stop the stream')
@@ -37,11 +43,15 @@ def add_args():
 
 
 async def _ws_toggle_mute(source):
+    """Use the OBS-Websocket to mute/unmute an audio source
+
+    :param source: The OBS audio source to mute/unmute
+    :type source: str
+    """
     # Make the connection to obs-websocket
     await ws.connect()
-    # Select the source with a data attachment and call the ToggleMute api
     data = {'source': source}
-    result = await ws.call('ToggleMute', data)
+    await ws.call('ToggleMute', data)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
@@ -49,6 +59,12 @@ async def _ws_toggle_mute(source):
 
 
 async def _ws_get_scene_list():
+    """Use the OBS-Websocket to get the list of scenes
+
+    :return: The currently active scene and an ordered list of all scenes
+        configured in OBS
+    :rtype: dict
+    """
     # Make the connection to obs-websocket
     await ws.connect()
     result = await ws.call('GetSceneList')
@@ -60,11 +76,15 @@ async def _ws_get_scene_list():
 
 
 async def _ws_set_scene(scene):
+    """Use the OBS-Websocket to set the current scene
+
+    :param scene: The name of the scene in OBS to make active
+    :type scene: str
+    """
     # Make the connection to obs-websocket
     await ws.connect()
-    # Select the source with a data attachment and call the SetCurrentScene api
     data = {'scene-name': scene}
-    result = await ws.call('SetCurrentScene', data)
+    await ws.call('SetCurrentScene', data)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
@@ -72,11 +92,11 @@ async def _ws_set_scene(scene):
 
 
 async def _ws_start_stop_stream():
+    """Use the OBS-Websocket to start or stop streaming
+    """
     # Make the connection to obs-websocket
     await ws.connect()
-    # Select the source with a data attachment and call the StartStopStreaming
-    # api
-    result = await ws.call('StartStopStreaming')
+    await ws.call('StartStopStreaming')
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
@@ -84,10 +104,15 @@ async def _ws_start_stop_stream():
 
 
 async def _ws_get_source_settings(source):
+    """Use the OBS-Websocket to get the settings for a source
+
+    :param source: The OBS source to get the settings for
+    :type source: str
+    :return: Details on the source name, type and the settings for the source
+    :rtype: dict
+    """
     # Make the connection to obs-websocket
     await ws.connect()
-    # Select the source with a data attachment and call the GetSourceSettings
-    # api
     data = {'sourceName': source}
     result = await ws.call('GetSourceSettings', data)
     # Clean things up by disconnecting. Only really required in a few specific
@@ -98,10 +123,20 @@ async def _ws_get_source_settings(source):
 
 
 async def _ws_set_source_settings(source, settings):
+    """Use the OBS-Websocket to set new settings for a source
+
+    :param source: The OBS source to update
+    :type source: str
+    :param settings: The updated settings to apply to the source in the same
+        format as the sourceSettings section returned from
+        _ws_get_source_settings
+    :type settings: dict
+    :return: Details on the source name, type and the updated settings for the
+        source
+    :rtype: dict
+    """
     # Make the connection to obs-websocket
     await ws.connect()
-    # Select the source with a data attachment and call the SetSourceSettings
-    # api
     data = {'sourceName': source, 'sourceSettings': settings}
     result = await ws.call('SetSourceSettings', data)
     # Clean things up by disconnecting. Only really required in a few specific
@@ -112,35 +147,65 @@ async def _ws_set_source_settings(source, settings):
 
 
 def mute_desktop_audio():
+    """Mute/Unmute the Desktop audio source as configured in sd_controls.ini
+    """
     loop.run_until_complete(_ws_toggle_mute(config['obs']['desktop_source']))
 
 
 def mute_mic_audio():
+    """Mute/Unmute the Microphone audio source as configured in sd_controls.ini
+    """
     loop.run_until_complete(_ws_toggle_mute(config['obs']['mic_source']))
 
 
 def mute_both_audio():
+    """Mute/Unmute both Desktop and Microphone audio sources as configured in
+    sd_controls.ini
+    """
     for source in (config['obs']['mic_source'],
                    config['obs']['desktop_source']):
         loop.run_until_complete(_ws_toggle_mute(source))
 
 
 def set_scene(scene_number):
+    """Set the active scene in OBS using the number of the scene as counted
+    from the top down of the scene list in OBS
+
+    :param scene_number: The scene number to make active
+    :type scene_number: int
+    """
     scene_list = loop.run_until_complete(_ws_get_scene_list())
     # Adjust for zero indexing
     scene_number = scene_number - 1
     new_scene = scene_list['scenes'][scene_number]['name']
     loop.run_until_complete(_ws_set_scene(new_scene))
-    return scene_list
 
 
 def start_stop_stream():
+    """Start/Stop the stream"""
     loop.run_until_complete(_ws_start_stop_stream())
 
 
 def panic_button():
-    # rewrite and mute URL sources
+    """Sadly, people are performing "hate raids" on twitch, raiding channels
+    and getting bot accounts to follow the streamer and spam chat with
+    hateful messages.
+
+    The follows will cause sound alert overlays to queue up notifications,
+    so this function will disable and re-enable those overlays as configured
+    in sd_controls.ini
+
+    TODO Integrate with twitch APIs to set chat to "Subscriber only mode"
+    or "Followers only mode" (based on follow duration) to block hateful
+    messages in chat.
+
+    :raises ValueError: If there is a conflict between either the saved URL for
+        the source, or the invalid.lan address that temporarily overwrites
+        the source's URL.
+    """
+    # Loop through configured alert sources
     for source in config['obs']['alert_sources'].split(':'):
+        # Get the current settings for the alert source.
         settings = loop.run_until_complete(_ws_get_source_settings(source))
         settings = settings['sourceSettings']
         # check if the source url is saved to the ini file, if not assume
@@ -157,21 +222,24 @@ def panic_button():
         else:
             raise ValueError('Browser source matches neither the saved value '
                              'in the ini file or \'http://invalid.lan/\'')
+        # Swap reroute_audio settings to make sure the audio for the browser
+        # source is routed through the OBS audio mixer and can be muted,
+        # instead of through the default Desktop audio source
         if settings['reroute_audio']:
             settings['reroute_audio'] = False
         else:
             settings['reroute_audio'] = True
-
+        # Update the settings and mute the sources.
         loop.run_until_complete(_ws_set_source_settings(source, settings))
         loop.run_until_complete(_ws_toggle_mute(source))
 
 
-def get_source_settings():
-    ret = loop.run_until_complete(_ws_get_source_settings('streamlabs_alerts'))
-    return ret
+def _do_action(arg):
+    """Check the command line arguments and run the appropriate function
 
-
-def do_action(arg):
+    :param arg: The command line arguments as gathered by argparser
+    :type arg: argparse.ArgumentParser
+    """
     if arg.action == 'panic_button':
         panic_button()
     elif arg.action == 'start_stop':
@@ -190,9 +258,9 @@ def do_action(arg):
 
 
 def main():
-    parser = add_args()
+    parser = _add_args()
     arg = parser.parse_args()
-    do_action(arg)
+    _do_action(arg)
 
 
 if __name__ == '__main__':
