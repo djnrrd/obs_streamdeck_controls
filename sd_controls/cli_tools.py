@@ -36,6 +36,20 @@ def _save_config(config):
         config.write(f)
 
 
+def _load_obs_ws(config):
+    """Load the simpleobsws object and return it.
+
+    :param config: The ConfigParser object
+    :type config: ConfigParser
+    :return: The simpleobsws object
+    :rtype: simpleobsws.obsws
+    """
+    if config.has_option('obs', 'obsws_password'):
+        ws = simpleobsws.obsws(password=config['obs']['obsws_password'])
+    else:
+        ws = simpleobsws.obsws()
+    return ws
+
 def _add_args():
     """Set up the script arguments using argparser
 
@@ -150,10 +164,7 @@ def main():
     """
     config = _load_config()
     # Load OBS WebServices object
-    if config.has_option('obs', 'obsws_password'):
-        ws = simpleobsws.obsws(password=config['obs']['obsws_password'])
-    else:
-        ws = simpleobsws.obsws()
+    ws = _load_obs_ws(config)
     # Get CLI arguments
     parser = _add_args()
     arg = parser.parse_args()
@@ -165,7 +176,6 @@ def main():
         _do_action(arg, config, ws)
     # Finally save the config, checking to make sure the directory exists
     _save_config(config)
-
 
 
 if __name__ == '__main__':
