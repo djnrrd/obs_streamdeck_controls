@@ -141,3 +141,17 @@ def config_setup(config):
             config.add_section('obs_browser_sources')
         # Config settings complete
     return config
+
+
+def swap_browser_sources(config, source, url):
+    if not config.has_option('obs_browser_sources', source):
+        config['obs_browser_sources'][source] = url
+    # Swap Browser source between saved URl and invalid.lan
+    if url == config['obs_browser_sources'][source]:
+        url = 'http://invalid.lan'
+    elif url == 'http://invalid.lan':
+        url = config['obs_browser_sources'][source]
+    else:
+        raise ValueError('Browser source matches neither the saved value '
+                         'in the ini file or \'http://invalid.lan/\'')
+    return url, config

@@ -1,7 +1,8 @@
 import argparse
-from .obs_controls import panic_button, mute_audio_source, start_stop_stream, \
-    set_scene
-from .config_mgmt import load_config, save_config, config_setup
+from .obs_controls import mute_audio_source, start_stop_stream, set_scene, \
+    get_source_settings, set_source_settings
+from .config_mgmt import load_config, save_config, config_setup, \
+    swap_browser_sources
 
 
 def _add_args():
@@ -49,7 +50,7 @@ def _do_action(arg, config):
     if arg.action == 'setup':
         config = config_setup(config)
     elif arg.action == 'panic_button':
-        panic_button(config, ws_password)
+        config = panic_button(config, ws_password)
     elif arg.action == 'start_stop':
         start_stop_stream(ws_password)
     elif arg.action == 'mute_mic':
@@ -68,6 +69,44 @@ def _do_action(arg, config):
     return config
 
 
+def panic_button(config, ws_password):
+    """Sadly, people are performing "hate raids" on twitch, raiding channels
+    and getting bot accounts to follow the streamer and spam chat with
+    hateful messages.
+
+    The follows will cause sound alert overlays to queue up notifications,
+    so this function will disable and re-enable those overlays as configured
+    in sd_controls.ini
+
+    TODO Integrate with twitch APIs to set chat to "Subscriber only mode"
+    or "Followers only mode" (based on follow duration) to block hateful
+    messages in chat.
+
+    :param config: ConfigParser object created in cli_tools
+    :type config: ConfigParser
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
+    :return: The ConfigParser object which may have been updated
+    :rtype: ConfigParser
+    :raises ValueError: If there is a conflict between either the saved URL for
+        the source, or the invalid.lan address that temporarily overwrites
+        the source's URL.
+    """
+    for source in config['obs']['alert_sources'].split(':'):
+        # Get the current settings for the alert source.
+        settings = get_source_settings(source, ws_password)
+        url, config = swap_browser_sources(config, source, settings['url'])
+        settings['url'] = url
+        if settings['reroute_audio']:
+            settings['reroute_audio'] = False
+        else:
+            settings['reroute_audio'] = True
+        # Update the settings and mute the sources.
+        mute_audio_source(source, ws_password)
+        set_source_settings(source, settings, ws_password)
+    return config
+
+
 def main():
     """Entry point for the console script 'obs-streamdeck-ctl'
     """
@@ -77,7 +116,7 @@ def main():
     arg = parser.parse_args()
     # Main functions.
     config = _do_action(arg, config)
-    # Finally save the config, checking to make sure the directory exists
+    # Finally save the config
     save_config(config)
 
 
