@@ -8,6 +8,36 @@ from configparser import ConfigParser
 from appdirs import user_config_dir
 
 
+def _add_args():
+    """Set up the script arguments using argparser
+
+    :return: The argparse parser object
+    :rtype: argparse.ArgumentParser
+    """
+    parser = argparse.ArgumentParser()
+    sub_parser = parser.add_subparsers(dest='action', required=True)
+    sub_parser.add_parser('start_stop', description='Start/Stop the stream')
+    sub_parser.add_parser('mute_mic',
+                          description='Mute/Unmute the Microphone source')
+    sub_parser.add_parser('mute_desk',
+                          description='Mute/Unmute the Desktop audio source')
+    sub_parser.add_parser('mute_all',
+                          description='Mute/Unmute both Desktop and Microphone '
+                                      'sources')
+    sub_parser.add_parser('panic_button',
+                          description='Disable/Enable alert sources in case of '
+                                      'hate raids')
+    scene_parser = sub_parser.add_parser('scene',
+                                         description='Switch between scenes in '
+                                                     'OBS')
+    scene_parser.add_argument('scene_number', type=int,
+                              help='The scene number to select (from the top '
+                                   'down)')
+    sub_parser.add_parser('setup', description='Run the setup wizard to '
+                                               'create your configuration file')
+    return parser
+
+
 def _load_config():
     """Load the config file and return the ConfigParser object
 
@@ -49,35 +79,6 @@ def _load_obs_ws(config):
     else:
         ws = simpleobsws.obsws()
     return ws
-
-def _add_args():
-    """Set up the script arguments using argparser
-
-    :return: The argparse parser object
-    :rtype: argparse.ArgumentParser
-    """
-    parser = argparse.ArgumentParser()
-    sub_parser = parser.add_subparsers(dest='action', required=True)
-    sub_parser.add_parser('start_stop', description='Start/Stop the stream')
-    sub_parser.add_parser('mute_mic',
-                          description='Mute/Unmute the Microphone source')
-    sub_parser.add_parser('mute_desk',
-                          description='Mute/Unmute the Desktop audio source')
-    sub_parser.add_parser('mute_all',
-                          description='Mute/Unmute both Desktop and Microphone '
-                                      'sources')
-    sub_parser.add_parser('panic_button',
-                          description='Disable/Enable alert sources in case of '
-                                      'hate raids')
-    scene_parser = sub_parser.add_parser('scene',
-                                         description='Switch between scenes in '
-                                                     'OBS')
-    scene_parser.add_argument('scene_number', type=int,
-                              help='The scene number to select (from the top '
-                                   'down)')
-    sub_parser.add_parser('setup', description='Run the setup wizard to '
-                                               'create your configuration file')
-    return parser
 
 
 def _config_setup(config):
@@ -140,7 +141,9 @@ def _do_action(arg, config, ws):
     :param ws: OBS WebSockets library
     :type ws: simpleobsws.obsws
     """
-    if arg.action == 'panic_button':
+    if arg.action == 'setup':
+        _config_setup(config)
+    elif arg.action == 'panic_button':
         panic_button(config, ws)
     elif arg.action == 'start_stop':
         start_stop_stream(ws)
@@ -170,10 +173,7 @@ def main():
     arg = parser.parse_args()
     # First check if we need to do setup of the ini file, otherwise over to
     # the main functions.
-    if arg.action == 'setup':
-        config_setup(config)
-    else:
-        _do_action(arg, config, ws)
+    _do_action(arg, config, ws)
     # Finally save the config, checking to make sure the directory exists
     _save_config(config)
 
