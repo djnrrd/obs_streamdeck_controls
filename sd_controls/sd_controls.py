@@ -2,6 +2,21 @@ import asyncio
 import simpleobsws
 
 
+def _load_obs_ws(ws_password=''):
+    """Load the simpleobsws object and return it.
+
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
+    :return: The simpleobsws object
+    :rtype: simpleobsws.obsws
+    """
+    if ws_password:
+        ws = simpleobsws.obsws(password=ws_password)
+    else:
+        ws = simpleobsws.obsws()
+    return ws
+
+
 async def _ws_toggle_mute(source, ws):
     """Use the OBS-Websocket to mute/unmute an audio source
 
@@ -119,27 +134,29 @@ async def _ws_set_source_settings(source, settings, ws):
     return result
 
 
-def mute_audio_source(source, ws):
+def mute_audio_source(source, ws_password):
     """Mute/Unmute the Microphone audio source as configured in sd_controls.ini
 
     :param source: the audio source to mute
     :type source: str
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
     """
+    ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_ws_toggle_mute(source, ws))
 
 
-def set_scene(ws, scene_number):
+def set_scene(scene_number, ws_password):
     """Set the active scene in OBS using the number of the scene as counted
     from the top down of the scene list in OBS
 
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
     :param scene_number: The scene number to make active
     :type scene_number: int
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
     """
+    ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
     scene_list = loop.run_until_complete(_ws_get_scene_list(ws))
     # Adjust for zero indexing
@@ -148,12 +165,13 @@ def set_scene(ws, scene_number):
     loop.run_until_complete(_ws_set_scene(new_scene, ws))
 
 
-def start_stop_stream(ws):
+def start_stop_stream(ws_password):
     """Start/Stop the stream
 
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
     """
+    ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_ws_start_stop_stream(ws))
 

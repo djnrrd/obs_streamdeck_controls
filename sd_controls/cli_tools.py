@@ -1,6 +1,6 @@
 import argparse
-from .sd_controls import panic_button, mute_audio_source, mute_both_audio, \
-    start_stop_stream, set_scene
+from .sd_controls import panic_button, mute_audio_source, start_stop_stream, \
+    set_scene
 import simpleobsws
 import sys
 import os
@@ -66,21 +66,6 @@ def _save_config(config):
         config.write(f)
 
 
-def _load_obs_ws(config):
-    """Load the simpleobsws object and return it.
-
-    :param config: The ConfigParser object
-    :type config: ConfigParser
-    :return: The simpleobsws object
-    :rtype: simpleobsws.obsws
-    """
-    if config.has_option('obs', 'obsws_password'):
-        ws = simpleobsws.obsws(password=config['obs']['obsws_password'])
-    else:
-        ws = simpleobsws.obsws()
-    return ws
-
-
 def _config_setup(config):
     """Run a CLI wizard to setup the ini file
     """
@@ -131,7 +116,7 @@ def _config_setup(config):
     config.add_section('obs_browser_sources')
 
 
-def _do_action(arg, config, ws):
+def _do_action(arg, config):
     """Check the command line arguments and run the appropriate function
 
     :param arg: The command line arguments as gathered by argparser
@@ -141,22 +126,26 @@ def _do_action(arg, config, ws):
     :param ws: OBS WebSockets library
     :type ws: simpleobsws.obsws
     """
+    if config.has_option('obs', 'obsws_password'):
+        ws_password = config['obs']['obsws_password']
+    else:
+        ws_password = ''
     if arg.action == 'setup':
         _config_setup(config)
     elif arg.action == 'panic_button':
-        panic_button(config, ws)
+        panic_button(config, ws_password)
     elif arg.action == 'start_stop':
-        start_stop_stream(ws)
+        start_stop_stream(ws_password)
     elif arg.action == 'mute_mic':
-        mute_audio_source(config['obs']['mic_source'], ws)
+        mute_audio_source(config['obs']['mic_source'], ws_password)
     elif arg.action == 'mute_desk':
-        mute_audio_source(config['obs']['desktop_source'], ws)
+        mute_audio_source(config['obs']['desktop_source'], ws_password)
     elif arg.action == 'mute_all':
         for source in (config['obs']['desktop_source'],
                        config['obs']['mic_source']):
-            mute_audio_source(source, ws)
+            mute_audio_source(source, ws_password)
     elif arg.action == 'scene':
-        set_scene(ws, arg.scene_number)
+        set_scene(arg.scene_number, ws_password)
     else:
         raise ValueError('Could not find a valid action from the command line '
                          'arguments')
@@ -166,14 +155,12 @@ def main():
     """Entry point for the console script 'obs-streamdeck-ctl'
     """
     config = _load_config()
-    # Load OBS WebServices object
-    ws = _load_obs_ws(config)
     # Get CLI arguments
     parser = _add_args()
     arg = parser.parse_args()
     # First check if we need to do setup of the ini file, otherwise over to
     # the main functions.
-    _do_action(arg, config, ws)
+    _do_action(arg, config)
     # Finally save the config, checking to make sure the directory exists
     _save_config(config)
 
