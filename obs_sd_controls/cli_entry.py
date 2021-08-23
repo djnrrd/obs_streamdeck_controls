@@ -1,7 +1,6 @@
 import argparse
-from .sd_controls import panic_button, mute_audio_source, start_stop_stream, \
+from .obs_controls import panic_button, mute_audio_source, start_stop_stream, \
     set_scene
-import simpleobsws
 import sys
 import os
 from configparser import ConfigParser
@@ -123,8 +122,6 @@ def _do_action(arg, config):
     :type arg: argparse.ArgumentParser
     :param config: Config details loaded by ConfigParser
     :type config: ConfigParser
-    :param ws: OBS WebSockets library
-    :type ws: simpleobsws.obsws
     """
     if config.has_option('obs', 'obsws_password'):
         ws_password = config['obs']['obsws_password']
