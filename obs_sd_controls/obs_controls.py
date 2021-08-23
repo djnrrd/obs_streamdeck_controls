@@ -176,52 +176,24 @@ def start_stop_stream(ws_password):
     loop.run_until_complete(_ws_start_stop_stream(ws))
 
 
-def panic_button(config, ws):
-    """Sadly, people are performing "hate raids" on twitch, raiding channels
-    and getting bot accounts to follow the streamer and spam chat with
-    hateful messages.
+def get_source_settings(source, ws_password):
+    """Get the current settings for an OBS Source
 
-    The follows will cause sound alert overlays to queue up notifications,
-    so this function will disable and re-enable those overlays as configured
-    in sd_controls.ini
-
-    TODO Integrate with twitch APIs to set chat to "Subscriber only mode"
-    or "Followers only mode" (based on follow duration) to block hateful
-    messages in chat.
-
-    :param config: ConfigParser object created in cli_tools
-    :type config: ConfigParser
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws: simpleobsws.obsws
-    :raises ValueError: If there is a conflict between either the saved URL for
-        the source, or the invalid.lan address that temporarily overwrites
-        the source's URL.
+    :param source: The name of the OBS source
+    :type source: str
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
+    :return: The current settings for the OBS source
+    :rtype: dict
     """
+    ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
-    # Loop through configured alert sources
-    for source in config['obs']['alert_sources'].split(':'):
-        # Get the current settings for the alert source.
-        settings = loop.run_until_complete(_ws_get_source_settings(source, ws))
-        settings = settings['sourceSettings']
-        # check if the source url is saved to the ini file, if not assume
-        # this is the first time we've run this and create it
-        if not config.has_option('obs_browser_sources', source):
-            config['obs_browser_sources'][source] = settings['url']
-        # Swap Browser source between saved URl and invalid.lan
-        if settings['url'] == config['obs_browser_sources'][source]:
-            settings['url'] = 'http://invalid.lan'
-        elif settings['url'] == 'http://invalid.lan':
-            settings['url'] = config['obs_browser_sources'][source]
-        else:
-            raise ValueError('Browser source matches neither the saved value '
-                             'in the ini file or \'http://invalid.lan/\'')
-        # Swap reroute_audio settings to make sure the audio for the browser
-        # source is routed through the OBS audio mixer and can be muted,
-        # instead of through the default Desktop audio source
-        if settings['reroute_audio']:
-            settings['reroute_audio'] = False
-        else:
-            settings['reroute_audio'] = True
-        # Update the settings and mute the sources.
-        loop.run_until_complete(_ws_set_source_settings(source, settings, ws))
-        loop.run_until_complete(_ws_toggle_mute(source, ws))
+    settings = loop.run_until_complete(_ws_get_source_settings(source, ws))
+    settings = settings['sourceSettings']
+    return settings
+
+
+def set_source_settings(source, settings, ws_password):
+    ws = _load_obs_ws(ws_password)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_ws_set_source_settings(source, settings, ws))
