@@ -1,10 +1,6 @@
 import asyncio
 import simpleobsws
 
-# Setup the asyncio event loop as a global, the simpleobsws library crashes
-# if you use asyncio.run and prefers to use the lower level get_event_loop API
-LOOP = asyncio.get_event_loop()
-
 
 async def _ws_toggle_mute(source, ws):
     """Use the OBS-Websocket to mute/unmute an audio source
@@ -131,21 +127,8 @@ def mute_audio_source(source, ws):
     :param ws: OBS WebSockets library created in cli_tools
     :type ws:  simpleobsws.obsws
     """
-    LOOP.run_until_complete(_ws_toggle_mute(source, ws))
-
-
-def mute_both_audio(config, ws):
-    """Mute/Unmute both Desktop and Microphone audio sources as configured in
-    sd_controls.ini
-
-    :param config: ConfigParser object created in cli_tools
-    :type config: ConfigParser
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
-    """
-    for source in (config['obs']['mic_source'],
-                   config['obs']['desktop_source']):
-        LOOP.run_until_complete(_ws_toggle_mute(source, ws))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_ws_toggle_mute(source, ws))
 
 
 def set_scene(ws, scene_number):
@@ -157,11 +140,12 @@ def set_scene(ws, scene_number):
     :param scene_number: The scene number to make active
     :type scene_number: int
     """
-    scene_list = LOOP.run_until_complete(_ws_get_scene_list(ws))
+    loop = asyncio.get_event_loop()
+    scene_list = loop.run_until_complete(_ws_get_scene_list(ws))
     # Adjust for zero indexing
     scene_number = scene_number - 1
     new_scene = scene_list['scenes'][scene_number]['name']
-    LOOP.run_until_complete(_ws_set_scene(new_scene, ws))
+    loop.run_until_complete(_ws_set_scene(new_scene, ws))
 
 
 def start_stop_stream(ws):
@@ -170,7 +154,8 @@ def start_stop_stream(ws):
     :param ws: OBS WebSockets library created in cli_tools
     :type ws:  simpleobsws.obsws
     """
-    LOOP.run_until_complete(_ws_start_stop_stream(ws))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_ws_start_stop_stream(ws))
 
 
 def panic_button(config, ws):
@@ -194,10 +179,11 @@ def panic_button(config, ws):
         the source, or the invalid.lan address that temporarily overwrites
         the source's URL.
     """
+    loop = asyncio.get_event_loop()
     # Loop through configured alert sources
     for source in config['obs']['alert_sources'].split(':'):
         # Get the current settings for the alert source.
-        settings = LOOP.run_until_complete(_ws_get_source_settings(source, ws))
+        settings = loop.run_until_complete(_ws_get_source_settings(source, ws))
         settings = settings['sourceSettings']
         # check if the source url is saved to the ini file, if not assume
         # this is the first time we've run this and create it
@@ -219,5 +205,5 @@ def panic_button(config, ws):
         else:
             settings['reroute_audio'] = True
         # Update the settings and mute the sources.
-        LOOP.run_until_complete(_ws_set_source_settings(source, settings, ws))
-        LOOP.run_until_complete(_ws_toggle_mute(source, ws))
+        loop.run_until_complete(_ws_set_source_settings(source, settings, ws))
+        loop.run_until_complete(_ws_toggle_mute(source, ws))

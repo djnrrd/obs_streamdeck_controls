@@ -8,6 +8,34 @@ from configparser import ConfigParser
 from appdirs import user_config_dir
 
 
+def _load_config():
+    """Load the config file and return the ConfigParser object
+
+    :return: the ConfigParser object
+    :rtype: ConfigParser
+    """
+    # Attempt to load the config file
+    config_dir = user_config_dir('obs-streamdeck-ctl')
+    config_file = os.path.join(config_dir, 'obs-streamdeck.ini')
+    config = ConfigParser()
+    config.read(config_file)
+    return config
+
+
+def _save_config(config):
+    """Save the config file to the user's local config directory.
+
+    :param config: The ConfigParser object
+    :type config: ConfigParser
+    """
+    config_dir = user_config_dir('obs-streamdeck-ctl')
+    config_file = os.path.join(config_dir, 'obs-streamdeck.ini')
+    if not all([os.path.exists(config_dir), os.path.isdir(config_dir)]):
+        os.mkdir(config_dir)
+    with open(config_file, 'w') as f:
+        config.write(f)
+
+
 def _add_args():
     """Set up the script arguments using argparser
 
@@ -38,7 +66,7 @@ def _add_args():
     return parser
 
 
-def config_setup(config, config_dir, config_file):
+def config_setup(config):
     """Run a CLI wizard to setup the ini file
     """
     # Check if config exists
@@ -107,7 +135,9 @@ def _do_action(arg, config, ws):
     elif arg.action == 'mute_desk':
         mute_audio_source(config['obs']['desktop_source'], ws)
     elif arg.action == 'mute_all':
-        mute_both_audio(config, ws)
+        for source in (config['obs']['desktop_source'],
+                       config['obs']['mic_source']):
+            mute_audio_source(source, ws)
     elif arg.action == 'scene':
         set_scene(ws, arg.scene_number)
     else:
@@ -118,11 +148,7 @@ def _do_action(arg, config, ws):
 def main():
     """Entry point for the console script 'obs-streamdeck-ctl'
     """
-    # Attempt to load the config file
-    config_dir = user_config_dir('obs-streamdeck-ctl')
-    config_file = os.path.join(config_dir, 'obs-streamdeck.ini')
-    config = ConfigParser()
-    config.read(config_file)
+    config = _load_config()
     # Load OBS WebServices object
     if config.has_option('obs', 'obsws_password'):
         ws = simpleobsws.obsws(password=config['obs']['obsws_password'])
@@ -134,14 +160,12 @@ def main():
     # First check if we need to do setup of the ini file, otherwise over to
     # the main functions.
     if arg.action == 'setup':
-        config_setup(config, config_dir, config_file)
+        config_setup(config)
     else:
         _do_action(arg, config, ws)
     # Finally save the config, checking to make sure the directory exists
-    if not all([os.path.exists(config_dir), os.path.isdir(config_dir)]):
-        os.mkdir(config_dir)
-    with open(config_file, 'w') as f:
-        config.write(f)
+    _save_config(config)
+
 
 
 if __name__ == '__main__':
