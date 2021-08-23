@@ -123,19 +123,7 @@ async def _ws_set_source_settings(source, settings, ws):
     return result
 
 
-def mute_desktop_audio(config, ws):
-    """Mute/Unmute the Desktop audio source as configured in sd_controls.ini
-
-    :param config: ConfigParser object created in cli_tools
-    :type config: ConfigParser
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
-    """
-    LOOP.run_until_complete(
-        _ws_toggle_mute(config['obs']['desktop_source'], ws))
-
-
-def mute_mic_audio(source, ws):
+def mute_audio_source(source, ws):
     """Mute/Unmute the Microphone audio source as configured in sd_controls.ini
 
     :param source: the audio source to mute

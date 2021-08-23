@@ -1,6 +1,6 @@
 import argparse
-from .sd_controls import panic_button, mute_mic_audio, mute_desktop_audio, \
-    mute_both_audio, start_stop_stream, set_scene
+from .sd_controls import panic_button, mute_audio_source, mute_both_audio, \
+    start_stop_stream, set_scene
 import simpleobsws
 import sys
 import os
@@ -103,9 +103,9 @@ def _do_action(arg, config, ws):
     elif arg.action == 'start_stop':
         start_stop_stream(ws)
     elif arg.action == 'mute_mic':
-        mute_mic_audio(config['obs']['mic_source'], ws)
+        mute_audio_source(config['obs']['mic_source'], ws)
     elif arg.action == 'mute_desk':
-        mute_desktop_audio(config, ws)
+        mute_audio_source(config['obs']['desktop_source'], ws)
     elif arg.action == 'mute_all':
         mute_both_audio(config, ws)
     elif arg.action == 'scene':
