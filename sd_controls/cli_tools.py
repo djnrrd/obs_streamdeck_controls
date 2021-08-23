@@ -80,7 +80,7 @@ def _add_args():
     return parser
 
 
-def config_setup(config):
+def _config_setup(config):
     """Run a CLI wizard to setup the ini file
     """
     # Check if config exists
