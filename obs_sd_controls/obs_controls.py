@@ -1,9 +1,20 @@
 import asyncio
 import simpleobsws
 
-# Setup the asyncio event loop as a global, the simpleobsws library crashes
-# if you use asyncio.run and prefers to use the lower level get_event_loop API
-LOOP = asyncio.get_event_loop()
+
+def _load_obs_ws(ws_password=''):
+    """Load the simpleobsws object and return it.
+
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
+    :return: The simpleobsws object
+    :rtype: simpleobsws.obsws
+    """
+    if ws_password:
+        ws = simpleobsws.obsws(password=ws_password)
+    else:
+        ws = simpleobsws.obsws()
+    return ws
 
 
 async def _ws_toggle_mute(source, ws):
@@ -123,66 +134,46 @@ async def _ws_set_source_settings(source, settings, ws):
     return result
 
 
-def mute_desktop_audio(config, ws):
-    """Mute/Unmute the Desktop audio source as configured in sd_controls.ini
-
-    :param config: ConfigParser object created in cli_tools
-    :type config: ConfigParser
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
-    """
-    LOOP.run_until_complete(
-        _ws_toggle_mute(config['obs']['desktop_source'], ws))
-
-
-def mute_mic_audio(config, ws):
+def mute_audio_source(source, ws_password):
     """Mute/Unmute the Microphone audio source as configured in sd_controls.ini
 
-    :param config: ConfigParser object created in cli_tools
-    :type config: ConfigParser
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
+    :param source: the audio source to mute
+    :type source: str
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
     """
-    LOOP.run_until_complete(_ws_toggle_mute(config['obs']['mic_source'], ws))
+    ws = _load_obs_ws(ws_password)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_ws_toggle_mute(source, ws))
 
 
-def mute_both_audio(config, ws):
-    """Mute/Unmute both Desktop and Microphone audio sources as configured in
-    sd_controls.ini
-
-    :param config: ConfigParser object created in cli_tools
-    :type config: ConfigParser
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
-    """
-    for source in (config['obs']['mic_source'],
-                   config['obs']['desktop_source']):
-        LOOP.run_until_complete(_ws_toggle_mute(source, ws))
-
-
-def set_scene(ws, scene_number):
+def set_scene(scene_number, ws_password):
     """Set the active scene in OBS using the number of the scene as counted
     from the top down of the scene list in OBS
 
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
     :param scene_number: The scene number to make active
     :type scene_number: int
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
     """
-    scene_list = LOOP.run_until_complete(_ws_get_scene_list(ws))
+    ws = _load_obs_ws(ws_password)
+    loop = asyncio.get_event_loop()
+    scene_list = loop.run_until_complete(_ws_get_scene_list(ws))
     # Adjust for zero indexing
     scene_number = scene_number - 1
     new_scene = scene_list['scenes'][scene_number]['name']
-    LOOP.run_until_complete(_ws_set_scene(new_scene, ws))
+    loop.run_until_complete(_ws_set_scene(new_scene, ws))
 
 
-def start_stop_stream(ws):
+def start_stop_stream(ws_password):
     """Start/Stop the stream
 
-    :param ws: OBS WebSockets library created in cli_tools
-    :type ws:  simpleobsws.obsws
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
     """
-    LOOP.run_until_complete(_ws_start_stop_stream(ws))
+    ws = _load_obs_ws(ws_password)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_ws_start_stop_stream(ws))
 
 
 def panic_button(config, ws):
@@ -206,10 +197,11 @@ def panic_button(config, ws):
         the source, or the invalid.lan address that temporarily overwrites
         the source's URL.
     """
+    loop = asyncio.get_event_loop()
     # Loop through configured alert sources
     for source in config['obs']['alert_sources'].split(':'):
         # Get the current settings for the alert source.
-        settings = LOOP.run_until_complete(_ws_get_source_settings(source, ws))
+        settings = loop.run_until_complete(_ws_get_source_settings(source, ws))
         settings = settings['sourceSettings']
         # check if the source url is saved to the ini file, if not assume
         # this is the first time we've run this and create it
@@ -231,5 +223,5 @@ def panic_button(config, ws):
         else:
             settings['reroute_audio'] = True
         # Update the settings and mute the sources.
-        LOOP.run_until_complete(_ws_set_source_settings(source, settings, ws))
-        LOOP.run_until_complete(_ws_toggle_mute(source, ws))
+        loop.run_until_complete(_ws_set_source_settings(source, settings, ws))
+        loop.run_until_complete(_ws_toggle_mute(source, ws))

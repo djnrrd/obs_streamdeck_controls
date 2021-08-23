@@ -4,9 +4,9 @@ setup(
     name='obs_streamdeck_controls',
     version='0.0.2',
     install_requires=['simpleobsws', 'appdirs'],
-    packages=['sd_controls'],
+    packages=['obs_sd_controls'],
     entry_points={
-        'console_scripts': ['obs-streamdeck-ctl=sd_controls.cli_tools:main']
+        'console_scripts': ['obs-streamdeck-ctl=obs_sd_controls.cli_entry:main']
     },
     url='https://github.com/djnrrd/obs_streamdeck_controls',
     license='GPL-3.0 License',
