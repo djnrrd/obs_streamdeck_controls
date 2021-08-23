@@ -1,10 +1,7 @@
 import argparse
 from .obs_controls import panic_button, mute_audio_source, start_stop_stream, \
     set_scene
-import sys
-import os
-from configparser import ConfigParser
-from appdirs import user_config_dir
+from .config_mgmt import load_config, save_config, config_setup
 
 
 def _add_args():
@@ -37,84 +34,6 @@ def _add_args():
     return parser
 
 
-def _load_config():
-    """Load the config file and return the ConfigParser object
-
-    :return: the ConfigParser object
-    :rtype: ConfigParser
-    """
-    # Attempt to load the config file
-    config_dir = user_config_dir('obs-streamdeck-ctl')
-    config_file = os.path.join(config_dir, 'obs-streamdeck.ini')
-    config = ConfigParser()
-    config.read(config_file)
-    return config
-
-
-def _save_config(config):
-    """Save the config file to the user's local config directory.
-
-    :param config: The ConfigParser object
-    :type config: ConfigParser
-    """
-    config_dir = user_config_dir('obs-streamdeck-ctl')
-    config_file = os.path.join(config_dir, 'obs-streamdeck.ini')
-    if not all([os.path.exists(config_dir), os.path.isdir(config_dir)]):
-        os.mkdir(config_dir)
-    with open(config_file, 'w') as f:
-        config.write(f)
-
-
-def _config_setup(config):
-    """Run a CLI wizard to setup the ini file
-    """
-    # Check if config exists
-    if config.has_section('obs'):
-        response_loop = True
-        while response_loop:
-            r = input('obs-streamdeck-ctl already has a config file, would you '
-                      'like to replace it? (Y/N) [N]: ')
-            if r.upper() in ('N', ''):
-                print('Exiting obs-streamdeck-ctl')
-                sys.exit()
-            elif r.upper() == 'Y':
-                response_loop = False
-    # The user has confirmed Y to the are you sure question
-    config.add_section('obs')
-    # Get the optional password
-    obsws_password = input('Please enter the password for OBS WebSockets '
-                            'server, or leave blank for no password []: ')
-    if obsws_password:
-        config['obs']['obsws_password'] = obsws_password
-    # Get the mic source
-    mic_source = input('Please enter the name of your Microphone source, '
-                       '(case sensitive) [Mic/Aux]: ')
-    if not mic_source:
-        mic_source = 'Mic/Aux'
-    config['obs']['mic_source'] = mic_source
-    # Get the desktop audio source
-    desktop_source = input('Please enter the name of your Desktop audio '
-                           'source, (case sensitive) [Desktop Audio]: ')
-    if not desktop_source:
-        desktop_source = 'Desktop Audio'
-    config['obs']['desktop_source'] = desktop_source
-    # Get the alert overlays list
-    alert_sources = list()
-    response_loop = True
-    while response_loop:
-        alert_source = input('Please enter the source name of your alert and '
-                             'chat overlays one at a time (case sensitive). '
-                             'Please enter a blank line when complete: ')
-        if alert_source:
-            alert_sources.append(alert_source)
-        else:
-            response_loop = False
-    config['obs']['alert_sources'] = ':'.join(alert_sources)
-    # Add the section for the Alert overlay URLs, they can be captured later
-    # when the panic button is hit
-    config.add_section('obs_browser_sources')
-
-
 def _do_action(arg, config):
     """Check the command line arguments and run the appropriate function
 
@@ -128,7 +47,7 @@ def _do_action(arg, config):
     else:
         ws_password = ''
     if arg.action == 'setup':
-        _config_setup(config)
+        config = config_setup(config)
     elif arg.action == 'panic_button':
         panic_button(config, ws_password)
     elif arg.action == 'start_stop':
@@ -146,20 +65,20 @@ def _do_action(arg, config):
     else:
         raise ValueError('Could not find a valid action from the command line '
                          'arguments')
+    return config
 
 
 def main():
     """Entry point for the console script 'obs-streamdeck-ctl'
     """
-    config = _load_config()
+    config = load_config()
     # Get CLI arguments
     parser = _add_args()
     arg = parser.parse_args()
-    # First check if we need to do setup of the ini file, otherwise over to
-    # the main functions.
-    _do_action(arg, config)
+    # Main functions.
+    config = _do_action(arg, config)
     # Finally save the config, checking to make sure the directory exists
-    _save_config(config)
+    save_config(config)
 
 
 if __name__ == '__main__':
