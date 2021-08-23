@@ -123,7 +123,7 @@ def config_setup(config):
     :rtype: ConfigParser
     """
     if _check_overwrite_config(config):
-        config.add_section('obs')
+        None if config.has_section('obs') else config.add_section('obs')
         # Get the optional password
         obsws_password = _get_obsws_password()
         if obsws_password:
@@ -137,6 +137,7 @@ def config_setup(config):
         config['obs']['alert_sources'] = ':'.join(alert_sources)
         # Add the section for the Alert overlay URLs, they can be captured later
         # when the panic button is hit
-        config.add_section('obs_browser_sources')
+        None if config.has_section('obs_browser_sources') else \
+            config.add_section('obs_browser_sources')
         # Config settings complete
     return config
