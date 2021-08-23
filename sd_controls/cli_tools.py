@@ -103,7 +103,7 @@ def _do_action(arg, config, ws):
     elif arg.action == 'start_stop':
         start_stop_stream(ws)
     elif arg.action == 'mute_mic':
-        mute_mic_audio(config, ws)
+        mute_mic_audio(config['obs']['mic_source'], ws)
     elif arg.action == 'mute_desk':
         mute_desktop_audio(config, ws)
     elif arg.action == 'mute_all':
