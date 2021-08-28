@@ -2,7 +2,7 @@ import argparse
 from .obs_controls import mute_audio_source, start_stop_stream, set_scene, \
     get_source_settings, set_source_settings
 from .config_mgmt import load_config, save_config, config_setup, \
-    swap_browser_sources
+    swap_browser_sources, SetupApp
 
 
 def _add_args():
@@ -48,7 +48,9 @@ def _do_action(arg, config):
     else:
         ws_password = ''
     if arg.action == 'setup':
-        config = config_setup(config)
+        app = SetupApp(config)
+        app.mainloop()
+        # config = config_setup(config)
     elif arg.action == 'panic_button':
         config = panic_button(config, ws_password)
     elif arg.action == 'start_stop':
