@@ -162,61 +162,113 @@ def swap_browser_sources(config, source, url):
 
 class SetupApp(tk.Tk):
 
-    def __init__(self, config, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, config):
+        """The main Tkinter GUI for the config setup wizard
+
+        :param config: The ConfigParser object that was loaded from
+            config_mgmt.load_config
+        :type config
+        """
+        super().__init__()
+        # Add the config to the application, we'll be calling it from some of
+        # the wizard frames
         self.config = config
         self.geometry('800x360')
-        self.title('obs-streamdeck-ctl Setup')
-        self.frames = dict()
+        self.title('OBS Streamdeck Control Setup Wizard')
         self.title_font = tk_font.Font(family='Helvetica', size=18,
                                        weight='bold', slant='italic')
+        # Set the main app container frame
         container = tk.Frame(self)
         container.pack(side='top', fill='both', expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-        for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources):
+        # Add the frames that will make up the wizard and show the first one.
+        self.frames = self.load_frames(container)
+        self.show_frame('WelcomePage')
+
+    def load_frames(self, container):
+        """Loop through the frames defined in this module, create them and add
+        them to the returned dictionary
+
+        :param container: The main application container frame that all
+            frames wil be attached to
+        :type: tk.Frame
+        :return: A dictionary of frame names and the objects created
+        :rtype: dict
+        """
+        ret_dict = dict()
+        for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
+                  ObsAlertSources):
             page_name = f.__name__
             frame = f(container, self)
             frame.grid(row=0, column=0, sticky='nsew')
-            self.frames[page_name] = frame
-        self.show_frame('WelcomePage')
+            ret_dict[page_name] = frame
+        return ret_dict
 
     def show_frame(self, page_name):
-        """Show a frame for the given page name"""
+        """Bring the requested frame to the foreground
+
+        :param page_name: The name of the frame to bring forward
+        :type page_name: str
+        """
         frame = self.frames[page_name]
         frame.tkraise()
 
 
 class SetupPage(tk.Frame):
+    """A superclass frame that should not be called directly, but instead
+    creates
+    the split between the main wizard section at the top and the navigation
+    buttons below.
+
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    """
 
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
         self.top_frame = tk.Frame(self)
         self.bottom_frame = tk.Frame(self)
+        # use grid layouts to create a 10:1 split between the top config frame
+        # and the lower navigation one
         self.top_frame.grid(row=0, column=0, sticky='nsew')
         self.bottom_frame.grid(row=1, column=0, sticky='nsew')
         self.grid_rowconfigure(0, weight=10)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
-        heading = tk.Label(self.top_frame, text='obs-streamdeck-ctl Setup',
-                           font=self.controller.title_font)
-        heading.pack(side='top', fill='x', pady=10)
 
 
 class WelcomePage(SetupPage):
+    """Introduction page for the Setup Wizard
+
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    """
 
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
-        description = tk.Label(self.top_frame, text='Welcome to the setup '
-                                                    'wizard for the TKinker '
-                                                    'tinker project')
+        heading = tk.Label(self.top_frame, text='OBS Streamdeck Control Setup',
+                           font=self.controller.title_font)
+        heading.pack(side='top', fill='x', pady=10)
+        description_text = 'Welcome to the setup wizard for OBS Streamdeck ' \
+                           'Controls.'
+        description = tk.Label(self.top_frame, text=description_text)
         description.pack(side='top', fill='x', pady=10)
         next_btn = tk.Button(self.bottom_frame, text='Next',
                              command=self.check_existing)
         next_btn.pack(side='right', padx=10)
 
     def check_existing(self):
+        """Check the controller to see if the loaded config file had valid
+        sections.  If it did redirect the user to a confirmation page about
+        changing existing configs, otherwise step past to the OBS WebSockets
+        Password configuration
+        """
         if self.controller.config.has_section('obs'):
             self.controller.show_frame('ExistingConfig')
         else:
@@ -224,11 +276,22 @@ class WelcomePage(SetupPage):
 
 
 class ExistingConfig(SetupPage):
+    """A Page to confirm if the user is happy to edit their already existing
+    config, as determined after the Welcome page
 
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    """
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
-        desc_text = 'obs-streamdeck-ctl already has a config file. Press Next ' \
-                    'to replace it, or Cancel to exit the Setup Wizard'
+        heading = tk.Label(self.top_frame,
+                           text='Existing Configuration Warning',
+                           font=self.controller.title_font)
+        heading.pack(side='top', fill='x', pady=10)
+        desc_text = 'OBS Streamdeck Control already has a config file. Press ' \
+                    'Next to replace it, or Cancel to exit the Setup Wizard'
         description = tk.Label(self.top_frame, text=desc_text)
         description.pack(side='top', fill='x', pady=10)
         next_btn = tk.Button(self.bottom_frame, text='Next',
@@ -241,10 +304,18 @@ class ExistingConfig(SetupPage):
 
 
 class ObsWsPass(SetupPage):
+    """A Page to determine the password for the OBS WebSockets server, if any.
 
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    """
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
+        # Set the password as a tk variable and load it from config if possible
         self.obsws_pass = tk.StringVar()
+        self.obsws_pass.set(self.load_password())
         desc_text = 'Please enter the password for OBS WebSockets server, ' \
                     'or leave blank for no password'
         description = tk.Label(self.top_frame, text=desc_text)
@@ -255,15 +326,110 @@ class ObsWsPass(SetupPage):
         next_btn = tk.Button(self.bottom_frame, text='Next',
                              command=self.update_password)
         next_btn.pack(side='right', padx=10)
+        cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
+                               command=controller.destroy)
+        cancel_btn.pack(side='right', padx=10)
+
+    def load_password(self):
+        """If there is an existing password, return that value.
+
+        :return: The existing password
+        :rtype: str
+        """
+        config = self.controller.config
+        # Make sure there is an 'obs' section in the config, adding it if
+        # there isn't
+        None if config.has_section('obs') else config.add_section('obs')
+        if config.has_option('obs', 'obsws_password'):
+            return config['obs']['obsws_password']
+        else:
+            return ''
 
     def update_password(self):
+        """Get the updated value from the entry box and update the config
+        before moving onto the next frame
+        """
         config = self.controller.config
-        None if config.has_section('obs') else config.add_section('obs')
         config['obs']['obsws_password'] = self.obsws_pass.get()
-        save_config(config)
         self.controller.show_frame('ObsAudioSources')
 
 
 class ObsAudioSources(SetupPage):
+    """A Page to determine the Microphone and Desktop Audio sources in OBS.
+
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    """
+
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+        # Set the sources as a tk variable and load them from config if possible
+        self.mic_source = tk.StringVar()
+        self.desktop_source = tk.StringVar()
+        self.mic_source.set(self.load_mic_source())
+        self.desktop_source.set(self.load_desktop_source())
+
+        desc_text = 'Please select your Microphone and Desktop Audio sources'
+        description = tk.Label(self.top_frame, text=desc_text)
+        description.pack(side='top', fill='x', pady=10)
+        mic_source_entry = tk.Entry(self.top_frame,
+                                    textvariable=self.mic_source)
+        mic_source_entry.pack(side='top', pady=10)
+        desktop_source_entry = tk.Entry(self.top_frame,
+                                        textvariable=self.desktop_source)
+        desktop_source_entry.pack(side='top', pady=10)
+        next_btn = tk.Button(self.bottom_frame, text='Next',
+                             command=self.update_sources)
+        next_btn.pack(side='right', padx=10)
+        back_btn = tk.Button(self.bottom_frame, text='Back',
+                             command=lambda:
+                             self.controller.show_frame('ObsWsPass'))
+        back_btn.pack(side='right', padx=10)
+        cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
+                               command=controller.destroy)
+        cancel_btn.pack(side='right', padx=10)
+
+    def load_mic_source(self):
+        """If there is an existing Mic source, return that value, otherwise
+        return the default
+
+        :return: The existing password
+        :rtype: str
+        """
+        config = self.controller.config
+        # Make sure there is an 'obs' section in the config, adding it if
+        # there isn't
+        None if config.has_section('obs') else config.add_section('obs')
+        if config.has_option('obs', 'mic_source'):
+            return config['obs']['mic_source']
+        else:
+            return 'Mic/Aux'
+
+    def load_desktop_source(self):
+        """If there is an existing Desktop source, return that value.
+        Otherwise return the default
+
+        :return: The existing password
+        :rtype: str
+        """
+        config = self.controller.config
+        # Make sure there is an 'obs' section in the config, adding it if
+        # there isn't
+        None if config.has_section('obs') else config.add_section('obs')
+        if config.has_option('obs', 'desktop_source'):
+            return config['obs']['desktop_source']
+        else:
+            return 'Desktop Audio'
+
+    def update_sources(self):
+        config = self.controller.config
+        config['obs']['mic_source'] = self.mic_source.get()
+        config['obs']['desktop_source'] = self.desktop_source.get()
+        self.controller.show_frame('ObsAlertSources')
+
+
+class ObsAlertSources(SetupPage):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
