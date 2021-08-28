@@ -194,6 +194,17 @@ def get_source_settings(source, ws_password):
 
 
 def set_source_settings(source, settings, ws_password):
+    """Apply new settings for the selected source
+
+    :param source: The name of the OBS source
+    :type source: str
+    :param settings: The updated settings to apply to the source in the same
+        format as the sourceSettings section returned from
+        get_source_settings
+    :type settings: dict
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
+    """
     ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_ws_set_source_settings(source, settings, ws))
