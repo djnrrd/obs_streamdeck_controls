@@ -134,6 +134,24 @@ async def _ws_set_source_settings(source, settings, ws):
     return result
 
 
+async def _ws_get_all_sources(ws):
+    """Use the OBS-Websocket to get a list of sources
+
+    :param ws: OBS WebSockets library created in cli_tools
+    :type ws: simpleobsws.obsws
+    :return: a list of all sources configured in OBS
+    :rtype: dict
+    """
+    # Make the connection to obs-websocket
+    await ws.connect()
+    result = await ws.call('GetSourcesList')
+    # Clean things up by disconnecting. Only really required in a few specific
+    # situations, but good practice if you are done making requests or listening
+    # to events.
+    await ws.disconnect()
+    return result
+
+
 def mute_audio_source(source, ws_password):
     """Mute/Unmute the Microphone audio source as configured in sd_controls.ini
 
@@ -208,3 +226,17 @@ def set_source_settings(source, settings, ws_password):
     ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_ws_set_source_settings(source, settings, ws))
+
+
+def get_all_sources(ws_password):
+    """Get a list of all sources currently configured in OBS
+
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
+    :return: A list of sources
+    :rtype: list
+    """
+    ws = _load_obs_ws(ws_password)
+    loop = asyncio.get_event_loop()
+    results = loop.run_until_complete(_ws_get_all_sources(ws))
+    return results['sources']
