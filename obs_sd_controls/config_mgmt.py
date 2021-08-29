@@ -3,7 +3,9 @@ from appdirs import user_config_dir
 import os
 import tkinter as tk
 from tkinter import font as tk_font
+from tkinter import messagebox as tk_mb
 from .obs_controls import get_all_sources
+from . import text_includes as ti
 
 
 def load_config():
@@ -172,14 +174,19 @@ class SetupApp(tk.Tk):
         super().__init__()
         # Add the config to the application, we'll be calling it from some of
         # the wizard frames
-        self.config = config
-        self.geometry('800x360')
-        self.title('OBS Streamdeck Control Setup Wizard')
+        self.obs_config = config
+        self.title(ti.APP_HEADER)
         self.title_font = tk_font.Font(family='Helvetica', size=18,
                                        weight='bold', slant='italic')
-        # Set the main app container frame
+        self.geometry('800x360')
+        # Make sure the main app only has one square in the grid that fills
+        # everything
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        # Set the main app container frame which again only has one square
+        # and fills everything
         container = tk.Frame(self)
-        container.pack(side='top', fill='both', expand=True)
+        container.grid(row=0, column=0, sticky='nsew')
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
@@ -214,6 +221,12 @@ class SetupApp(tk.Tk):
         frame = self.frames[page_name]
         frame.tkraise()
 
+    def show_busy(self):
+        self.config(cursor='watch')
+
+    def clear_busy(self):
+        self.config(cursor='')
+
 
 class SetupPage(tk.Frame):
     """A superclass frame that should not be called directly, but instead
@@ -230,15 +243,17 @@ class SetupPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+        # Create 2 frames The top one is for the actual config bits and the
+        # lower one for navigation
         self.top_frame = tk.Frame(self)
         self.bottom_frame = tk.Frame(self)
-        # use grid layouts to create a 10:1 split between the top config frame
-        # and the lower navigation one
+        # Favour the top row, so the bottom row is only as big as it needs to
+        # be with a little padding
         self.top_frame.grid(row=0, column=0, sticky='nsew')
-        self.bottom_frame.grid(row=1, column=0, sticky='nsew')
-        self.grid_rowconfigure(0, weight=10)
+        self.bottom_frame.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
+        self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=0)
 
 
 class WelcomePage(SetupPage):
@@ -252,16 +267,22 @@ class WelcomePage(SetupPage):
 
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
-        heading = tk.Label(self.top_frame, text='OBS Streamdeck Control Setup',
+
+        heading = tk.Label(self.top_frame, text=ti.WELCOME_HEADING,
                            font=self.controller.title_font)
-        heading.pack(side='top', fill='x', pady=10)
-        description_text = 'Welcome to the setup wizard for OBS Streamdeck ' \
-                           'Controls.'
-        description = tk.Label(self.top_frame, text=description_text)
-        description.pack(side='top', fill='x', pady=10)
+        heading.grid(row=0, column=0, sticky='nsew', pady=10)
+        description = tk.Label(self.top_frame, text=ti.WELCOME_TEXT)
+        description.grid(row=1, column=0, sticky='nw', padx=5)
+        # Favour the body of the text over the header
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=1)
+        self.top_frame.grid_columnconfigure(0, weight=1)
+        # Navigation button
         next_btn = tk.Button(self.bottom_frame, text='Next',
                              command=self.check_existing)
-        next_btn.pack(side='right', padx=10)
+        # Putting a sticky E will right justify it
+        next_btn.grid(row=0, column=0, sticky='e')
+        self.bottom_frame.grid_columnconfigure(0, weight=1)
 
     def check_existing(self):
         """Check the controller to see if the loaded config file had valid
@@ -269,7 +290,7 @@ class WelcomePage(SetupPage):
         changing existing configs, otherwise step past to the OBS WebSockets
         Password configuration
         """
-        if self.controller.config.has_section('obs'):
+        if self.controller.obs_config.has_section('obs'):
             self.controller.show_frame('ExistingConfig')
         else:
             self.controller.show_frame('ObsWsPass')
@@ -286,21 +307,26 @@ class ExistingConfig(SetupPage):
     """
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
-        heading = tk.Label(self.top_frame,
-                           text='Existing Configuration Warning',
+        heading = tk.Label(self.top_frame, text=ti.EXISTING_HEADING,
                            font=self.controller.title_font)
-        heading.pack(side='top', fill='x', pady=10)
-        desc_text = 'OBS Streamdeck Control already has a config file. Press ' \
-                    'Next to replace it, or Cancel to exit the Setup Wizard'
-        description = tk.Label(self.top_frame, text=desc_text)
-        description.pack(side='top', fill='x', pady=10)
+        heading.grid(row=0, column=0, sticky='nsew', pady=10)
+        description = tk.Label(self.top_frame, text=ti.EXISTING_TEXT)
+        description.grid(row=1, column=0, sticky='nw', padx=5)
+        # Favour the body of the text over the header
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=1)
+        self.top_frame.grid_columnconfigure(0, weight=1)
+        # Navigation buttons
         next_btn = tk.Button(self.bottom_frame, text='Next',
                              command=lambda:
                              controller.show_frame('ObsWsPass'))
-        next_btn.pack(side='right', padx=10)
+        next_btn.grid(row=0, column=1, sticky='e')
         cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
                                command=controller.destroy)
-        cancel_btn.pack(side='right', padx=10)
+        cancel_btn.grid(row=0, column=0, sticky='e', padx=5)
+        # Favour the left hand column to force everything to the right
+        self.bottom_frame.grid_columnconfigure(0, weight=1)
+        self.bottom_frame.grid_columnconfigure(1, weight=0)
 
 
 class ObsWsPass(SetupPage):
@@ -316,19 +342,35 @@ class ObsWsPass(SetupPage):
         # Set the password as a tk variable and load it from config if possible
         self.obsws_pass = tk.StringVar()
         self.obsws_pass.set(self.load_password())
-        desc_text = 'Please enter the password for OBS WebSockets server, ' \
-                    'or leave blank for no password'
-        description = tk.Label(self.top_frame, text=desc_text)
-        description.pack(side='top', fill='x', pady=10)
+        # Top frame layout
+        heading = tk.Label(self.top_frame, text=ti.OBSWSPASS_HEADING,
+                           font=self.controller.title_font)
+        heading.grid(row=0, column=0, sticky='nsew', pady=10, columnspan=2)
+        description = tk.Label(self.top_frame, text=ti.OBSWSPASS_TEXT)
+        description.grid(row=1, column=0, sticky='nw', columnspan=2, pady=10,
+                         padx=5)
+        password_prompt = tk.Label(self.top_frame, text=ti.OBSWSPASS_PROMPT)
+        password_prompt.grid(row=2, column=0, sticky='ne', padx=5)
         obsws_pass_entry = tk.Entry(self.top_frame,
                                     textvariable=self.obsws_pass)
-        obsws_pass_entry.pack(side='top', pady=10)
+        obsws_pass_entry.grid(row=2, column=1, sticky='nw')
+        # Prefer the bottom row to force everything up and the right hand
+        # column to force everything left
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=0)
+        self.top_frame.grid_rowconfigure(2, weight=1)
+        self.top_frame.grid_columnconfigure(0, weight=0)
+        self.top_frame.grid_columnconfigure(1, weight=1)
+        # Navigation Buttons
         next_btn = tk.Button(self.bottom_frame, text='Next',
                              command=self.update_password)
-        next_btn.pack(side='right', padx=10)
+        next_btn.grid(row=0, column=1, sticky='e')
         cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
                                command=controller.destroy)
-        cancel_btn.pack(side='right', padx=10)
+        cancel_btn.grid(row=0, column=0, sticky='e', padx=5)
+        # Favour the left hand column to force everything to the right
+        self.bottom_frame.grid_columnconfigure(0, weight=1)
+        self.bottom_frame.grid_columnconfigure(1, weight=0)
 
     def load_password(self):
         """If there is an existing password, return that value.
@@ -336,7 +378,7 @@ class ObsWsPass(SetupPage):
         :return: The existing password
         :rtype: str
         """
-        config = self.controller.config
+        config = self.controller.obs_config
         # Make sure there is an 'obs' section in the config, adding it if
         # there isn't
         None if config.has_section('obs') else config.add_section('obs')
@@ -346,12 +388,26 @@ class ObsWsPass(SetupPage):
             return ''
 
     def update_password(self):
-        """Get the updated value from the entry box and update the config
-        before moving onto the next frame
+        """Get the updated value from the entry box and update the config.
+        Before showing the next frame, load the sources from OBS
         """
-        config = self.controller.config
+        config = self.controller.obs_config
         config['obs']['obsws_password'] = self.obsws_pass.get()
-        self.controller.show_frame('ObsAudioSources')
+        self.get_obs_sources()
+
+    def get_obs_sources(self):
+        self.controller.show_busy()
+        config = self.controller.obs_config
+        try:
+            obs_sources = get_all_sources(config['obs']['obsws_password'])
+            self.controller.clear_busy()
+            self.controller.frames['ObsAudioSources'].\
+                load_obs_sources(obs_sources)
+            self.controller.show_frame('ObsAudioSources')
+        except (ConnectionRefusedError, NameError):
+            self.controller.clear_busy()
+            tk_mb.showwarning(title=ti.OBSWSPASS_WARN_HEADER,
+                              message=ti.OBSWSPASS_WARN)
 
 
 class ObsAudioSources(SetupPage):
@@ -370,26 +426,66 @@ class ObsAudioSources(SetupPage):
         self.desktop_source = tk.StringVar()
         self.mic_source.set(self.load_mic_source())
         self.desktop_source.set(self.load_desktop_source())
-
-        desc_text = 'Please select your Microphone and Desktop Audio sources'
-        description = tk.Label(self.top_frame, text=desc_text)
-        description.pack(side='top', fill='x', pady=10)
+        # Create a new frame for a scrollable listbox
+        listbox_frame = tk.Frame(self.top_frame)
+        # Set the OBS sources listbox as a property for this object since
+        # we'll need to call it later
+        self.obs_sources = tk.Listbox(listbox_frame, selectmode='single')
+        self.obs_sources.grid(row=0, column=0)
+        obs_source_scroll = tk.Scrollbar(listbox_frame)
+        obs_source_scroll.grid(row=0, column=1, sticky='ns')
+        obs_source_scroll.config(command=self.obs_sources.yview)
+        self.obs_sources.config(yscrollcommand=obs_source_scroll.set)
+        # Top frame layout
+        heading = tk.Label(self.top_frame, text=ti.OBSAUDIO_HEADING,
+                           font=self.controller.title_font)
+        heading.grid(row=0, column=0, sticky='nsew', pady=10, columnspan=3)
+        description = tk.Label(self.top_frame, text=ti.OBSAUDIO_TEXT)
+        description.grid(row=1, column=0, sticky='nw', columnspan=3, pady=10,
+                         padx=5)
+        listbox_frame.grid(row=2, column=0, rowspan=6, padx=5, sticky='ne')
+        mic_source_button = tk.Button(self.top_frame, text=' > ')
+        mic_source_button.grid(row=3, column=1, padx=10, sticky='ew')
+        mic_source_label = tk.Label(self.top_frame, text=ti.OBSAUDIO_MIC_PROMPT)
+        mic_source_label.grid(row=2, column=2, sticky='sw')
         mic_source_entry = tk.Entry(self.top_frame,
                                     textvariable=self.mic_source)
-        mic_source_entry.pack(side='top', pady=10)
+        mic_source_entry.grid(row=3, column=2, sticky='w')
+        desktop_source_button = tk.Button(self.top_frame, text=' > ')
+        desktop_source_button.grid(row=6, column=1, padx=10, sticky='ew')
+        desktop_source_label = tk.Label(self.top_frame,
+                                        text=ti.OBSAUDIO_DESK_PROMPT)
+        desktop_source_label.grid(row=5, column=2, sticky='sw')
         desktop_source_entry = tk.Entry(self.top_frame,
                                         textvariable=self.desktop_source)
-        desktop_source_entry.pack(side='top', pady=10)
+        desktop_source_entry.grid(row=6, column=2, sticky='w')
+        # Prefer the bottom row to force everything up and the right hand
+        # column to force everything left
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=0)
+        self.top_frame.grid_rowconfigure(2, weight=0)
+        self.top_frame.grid_rowconfigure(3, weight=0)
+        self.top_frame.grid_rowconfigure(4, weight=0)
+        self.top_frame.grid_rowconfigure(5, weight=0)
+        self.top_frame.grid_rowconfigure(6, weight=0)
+        self.top_frame.grid_columnconfigure(0, weight=0)
+        self.top_frame.grid_columnconfigure(1, weight=0)
+        self.top_frame.grid_columnconfigure(2, weight=1)
+        # Navigation
         next_btn = tk.Button(self.bottom_frame, text='Next',
                              command=self.update_sources)
-        next_btn.pack(side='right', padx=10)
+        next_btn.grid(row=0, column=2, sticky='e')
         back_btn = tk.Button(self.bottom_frame, text='Back',
                              command=lambda:
                              self.controller.show_frame('ObsWsPass'))
-        back_btn.pack(side='right', padx=10)
+        back_btn.grid(row=0, column=1, sticky='e', padx=5)
         cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
                                command=controller.destroy)
-        cancel_btn.pack(side='right', padx=10)
+        cancel_btn.grid(row=0, column=0, sticky='e')
+        # Favour the left hand column to force everything to the right
+        self.bottom_frame.grid_columnconfigure(0, weight=1)
+        self.bottom_frame.grid_columnconfigure(1, weight=0)
+        self.bottom_frame.grid_columnconfigure(2, weight=0)
 
     def load_mic_source(self):
         """If there is an existing Mic source, return that value, otherwise
@@ -398,10 +494,7 @@ class ObsAudioSources(SetupPage):
         :return: The existing password
         :rtype: str
         """
-        config = self.controller.config
-        # Make sure there is an 'obs' section in the config, adding it if
-        # there isn't
-        None if config.has_section('obs') else config.add_section('obs')
+        config = self.controller.obs_config
         if config.has_option('obs', 'mic_source'):
             return config['obs']['mic_source']
         else:
@@ -414,17 +507,24 @@ class ObsAudioSources(SetupPage):
         :return: The existing password
         :rtype: str
         """
-        config = self.controller.config
-        # Make sure there is an 'obs' section in the config, adding it if
-        # there isn't
-        None if config.has_section('obs') else config.add_section('obs')
+        config = self.controller.obs_config
         if config.has_option('obs', 'desktop_source'):
             return config['obs']['desktop_source']
         else:
             return 'Desktop Audio'
 
+    def load_obs_sources(self, obs_sources):
+        sources = [x['name'] for x in obs_sources]
+        default_sources = (self.mic_source.get(), self.desktop_source.get())
+        for source in sources:
+            if source not in default_sources:
+                self.obs_sources.insert('end', source)
+
     def update_sources(self):
-        config = self.controller.config
+        """Get the updated value from the entry box and update the config
+        before moving onto the next frame
+        """
+        config = self.controller.obs_config
         config['obs']['mic_source'] = self.mic_source.get()
         config['obs']['desktop_source'] = self.desktop_source.get()
         self.controller.show_frame('ObsAlertSources')
