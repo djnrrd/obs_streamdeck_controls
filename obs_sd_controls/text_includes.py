@@ -22,3 +22,10 @@ OBSAUDIO_HEADING = 'Select OBS Audio Sources'
 OBSAUDIO_TEXT = 'Please select your Microphone and Desktop Audio sources'
 OBSAUDIO_MIC_PROMPT = 'Microphone Source'
 OBSAUDIO_DESK_PROMPT = 'Desktop Audio Source'
+
+OBSALERT_HEADING = 'Select OBS Notification and Chat Sources'
+OBSALERT_TEXT = 'Please select the browser sources used for notifications ' \
+                'and/or chat that you wish to disable should you press the ' \
+                '"Panic Button"'
+OBSALERT_SOURCE_PROMPT = 'OBS Sources'
+OBSALERT_ALERT_PROMPT = 'Notification/Chat Sources'

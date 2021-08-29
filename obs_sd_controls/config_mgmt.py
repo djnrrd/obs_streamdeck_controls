@@ -179,6 +179,7 @@ class SetupApp(tk.Tk):
         self.title_font = tk_font.Font(family='Helvetica', size=18,
                                        weight='bold', slant='italic')
         self.geometry('800x360')
+        self.resizable(False, False)
         # Make sure the main app only has one square in the grid that fills
         # everything
         self.grid_rowconfigure(0, weight=1)
@@ -255,6 +256,88 @@ class SetupPage(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=0)
 
+    def setup_navigation(self, next_function, back_function=None):
+        """ Setup the navigation buttons in the bottom frame
+
+        :param next_function: The function to call when clicking the Next button
+        :type next_function: function
+        :param back_function: The function to call when clicking the Back button
+        :type back_function: function
+        """
+        # Do we have a back function? If so, renumber the position of the
+        # Next button
+        next_col = 1
+        if back_function:
+            next_col = 2
+            back_btn = tk.Button(self.bottom_frame, text='Back',
+                                 command=back_function)
+            back_btn.grid(row=0, column=1, sticky='e', padx=5)
+        cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
+                               command=self.controller.destroy)
+        cancel_btn.grid(row=0, column=0, sticky='e')
+        next_btn = tk.Button(self.bottom_frame, text='Next',
+                             command=next_function)
+        next_btn.grid(row=0, column=next_col, sticky='e')
+        # Favour the left hand column to force everything to the right
+        self.bottom_frame.grid_columnconfigure(0, weight=1)
+        self.bottom_frame.grid_columnconfigure(1, weight=0)
+        if back_function:
+            self.bottom_frame.grid_columnconfigure(2, weight=0)
+
+    def setup_header(self, header_text, body_text, col_span=1):
+        """Setup the heading section in the top frame. Weighting of the grid
+        sections is not completed in this function, and should be completed
+        after the other components have been laid out
+
+        :param header_text: The text to render as the header for the frame
+        :type header_text: str
+        :param body_text: The text to render as the body for the frame
+        :type body_text: str
+        :param col_span: If the header section
+        :return:
+        """
+        heading = tk.Label(self.top_frame, text=header_text,
+                           font=self.controller.title_font)
+        heading.grid(row=0, column=0, sticky='nsew', pady=10,
+                     columnspan=col_span)
+        description = tk.Message(self.top_frame, text=body_text, width=780)
+        description.grid(row=1, column=0, sticky='nw', columnspan=col_span,
+                         pady=10, padx=5)
+
+    @staticmethod
+    def list_to_entry(list_widget, entry_widget):
+        """Swap the selected entry in a Listbox widget with the value in an
+        Entry widget
+
+        :param list_widget: The Listbox widget
+        :type list_widget: tk.Listbox
+        :param entry_widget: The Entry widget
+        :type entry_widget: tk.Entry
+        """
+        old_source = entry_widget.get()
+        new_source = list_widget.get(list_widget.curselection())
+        entry_widget.set(new_source)
+        list_widget.insert(list_widget.curselection(), old_source)
+        list_widget.delete(list_widget.curselection())
+
+    def setup_list_frame(self):
+        """Create a frame for a list box with a scroll bar to be added to the
+        top frame. Weighting of the outer grid sections is not completed in
+        this function, and should be completed after the other components have
+        been laid out
+
+        :return: The frame and listbox for further interaction
+        :rtype: (tk.Frame, tk.Listbox)
+        """
+        frame = tk.Frame(self.top_frame)
+        list_box = tk.Listbox(frame, selectmode='single')
+        list_box.grid(row=0, column=0)
+        scroll = tk.Scrollbar(frame)
+        scroll.grid(row=0, column=1, sticky='ns')
+        scroll.config(command=list_box.yview)
+        list_box.config(yscrollcommand=scroll.set)
+        return frame, list_box
+
 
 class WelcomePage(SetupPage):
     """Introduction page for the Setup Wizard
@@ -267,22 +350,12 @@ class WelcomePage(SetupPage):
 
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
-
-        heading = tk.Label(self.top_frame, text=ti.WELCOME_HEADING,
-                           font=self.controller.title_font)
-        heading.grid(row=0, column=0, sticky='nsew', pady=10)
-        description = tk.Label(self.top_frame, text=ti.WELCOME_TEXT)
-        description.grid(row=1, column=0, sticky='nw', padx=5)
+        self.setup_header(ti.WELCOME_HEADING, ti.WELCOME_TEXT)
         # Favour the body of the text over the header
         self.top_frame.grid_rowconfigure(0, weight=0)
         self.top_frame.grid_rowconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(0, weight=1)
-        # Navigation button
-        next_btn = tk.Button(self.bottom_frame, text='Next',
-                             command=self.check_existing)
-        # Putting a sticky E will right justify it
-        next_btn.grid(row=0, column=0, sticky='e')
-        self.bottom_frame.grid_columnconfigure(0, weight=1)
+        self.setup_navigation(self.check_existing)
 
     def check_existing(self):
         """Check the controller to see if the loaded config file had valid
@@ -307,26 +380,12 @@ class ExistingConfig(SetupPage):
     """
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
-        heading = tk.Label(self.top_frame, text=ti.EXISTING_HEADING,
-                           font=self.controller.title_font)
-        heading.grid(row=0, column=0, sticky='nsew', pady=10)
-        description = tk.Label(self.top_frame, text=ti.EXISTING_TEXT)
-        description.grid(row=1, column=0, sticky='nw', padx=5)
+        self.setup_header(ti.EXISTING_HEADING, ti.EXISTING_TEXT)
         # Favour the body of the text over the header
         self.top_frame.grid_rowconfigure(0, weight=0)
         self.top_frame.grid_rowconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(0, weight=1)
-        # Navigation buttons
-        next_btn = tk.Button(self.bottom_frame, text='Next',
-                             command=lambda:
-                             controller.show_frame('ObsWsPass'))
-        next_btn.grid(row=0, column=1, sticky='e')
-        cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
-                               command=controller.destroy)
-        cancel_btn.grid(row=0, column=0, sticky='e', padx=5)
-        # Favour the left hand column to force everything to the right
-        self.bottom_frame.grid_columnconfigure(0, weight=1)
-        self.bottom_frame.grid_columnconfigure(1, weight=0)
+        self.setup_navigation(lambda: controller.show_frame('ObsWsPass'))
 
 
 class ObsWsPass(SetupPage):
@@ -342,13 +401,8 @@ class ObsWsPass(SetupPage):
         # Set the password as a tk variable and load it from config if possible
         self.obsws_pass = tk.StringVar()
         self.obsws_pass.set(self.load_password())
-        # Top frame layout
-        heading = tk.Label(self.top_frame, text=ti.OBSWSPASS_HEADING,
-                           font=self.controller.title_font)
-        heading.grid(row=0, column=0, sticky='nsew', pady=10, columnspan=2)
-        description = tk.Label(self.top_frame, text=ti.OBSWSPASS_TEXT)
-        description.grid(row=1, column=0, sticky='nw', columnspan=2, pady=10,
-                         padx=5)
+        # Layout
+        self.setup_header(ti.OBSWSPASS_HEADING, ti.OBSWSPASS_TEXT, 2)
         password_prompt = tk.Label(self.top_frame, text=ti.OBSWSPASS_PROMPT)
         password_prompt.grid(row=2, column=0, sticky='ne', padx=5)
         obsws_pass_entry = tk.Entry(self.top_frame,
@@ -361,16 +415,7 @@ class ObsWsPass(SetupPage):
         self.top_frame.grid_rowconfigure(2, weight=1)
         self.top_frame.grid_columnconfigure(0, weight=0)
         self.top_frame.grid_columnconfigure(1, weight=1)
-        # Navigation Buttons
-        next_btn = tk.Button(self.bottom_frame, text='Next',
-                             command=self.update_password)
-        next_btn.grid(row=0, column=1, sticky='e')
-        cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
-                               command=controller.destroy)
-        cancel_btn.grid(row=0, column=0, sticky='e', padx=5)
-        # Favour the left hand column to force everything to the right
-        self.bottom_frame.grid_columnconfigure(0, weight=1)
-        self.bottom_frame.grid_columnconfigure(1, weight=0)
+        self.setup_navigation(self.update_password)
 
     def load_password(self):
         """If there is an existing password, return that value.
@@ -426,32 +471,20 @@ class ObsAudioSources(SetupPage):
         self.desktop_source = tk.StringVar()
         self.mic_source.set(self.load_mic_source())
         self.desktop_source.set(self.load_desktop_source())
-        # Create a new frame for a scrollable listbox
-        listbox_frame = tk.Frame(self.top_frame)
-        # Set the OBS sources listbox as a property for this object since
-        # we'll need to call it later
-        self.obs_sources = tk.Listbox(listbox_frame, selectmode='single')
-        self.obs_sources.grid(row=0, column=0)
-        obs_source_scroll = tk.Scrollbar(listbox_frame)
-        obs_source_scroll.grid(row=0, column=1, sticky='ns')
-        obs_source_scroll.config(command=self.obs_sources.yview)
-        self.obs_sources.config(yscrollcommand=obs_source_scroll.set)
-        # Top frame layout
-        heading = tk.Label(self.top_frame, text=ti.OBSAUDIO_HEADING,
-                           font=self.controller.title_font)
-        heading.grid(row=0, column=0, sticky='nsew', pady=10, columnspan=3)
-        description = tk.Label(self.top_frame, text=ti.OBSAUDIO_TEXT)
-        description.grid(row=1, column=0, sticky='nw', columnspan=3, pady=10,
-                         padx=5)
+        # Layout
+        self.setup_header(ti.OBSAUDIO_HEADING, ti.OBSAUDIO_TEXT, 3)
+        listbox_frame, self.obs_sources = self.setup_list_frame()
         listbox_frame.grid(row=2, column=0, rowspan=6, padx=5, sticky='ne')
-        mic_source_button = tk.Button(self.top_frame, text=' > ')
+        mic_source_button = tk.Button(self.top_frame, text=' > ',
+                                      command=self.select_mic_source)
         mic_source_button.grid(row=3, column=1, padx=10, sticky='ew')
         mic_source_label = tk.Label(self.top_frame, text=ti.OBSAUDIO_MIC_PROMPT)
         mic_source_label.grid(row=2, column=2, sticky='sw')
         mic_source_entry = tk.Entry(self.top_frame,
                                     textvariable=self.mic_source)
         mic_source_entry.grid(row=3, column=2, sticky='w')
-        desktop_source_button = tk.Button(self.top_frame, text=' > ')
+        desktop_source_button = tk.Button(self.top_frame, text=' > ',
+                                          command=self.select_desktop_source)
         desktop_source_button.grid(row=6, column=1, padx=10, sticky='ew')
         desktop_source_label = tk.Label(self.top_frame,
                                         text=ti.OBSAUDIO_DESK_PROMPT)
@@ -471,21 +504,8 @@ class ObsAudioSources(SetupPage):
         self.top_frame.grid_columnconfigure(0, weight=0)
         self.top_frame.grid_columnconfigure(1, weight=0)
         self.top_frame.grid_columnconfigure(2, weight=1)
-        # Navigation
-        next_btn = tk.Button(self.bottom_frame, text='Next',
-                             command=self.update_sources)
-        next_btn.grid(row=0, column=2, sticky='e')
-        back_btn = tk.Button(self.bottom_frame, text='Back',
-                             command=lambda:
-                             self.controller.show_frame('ObsWsPass'))
-        back_btn.grid(row=0, column=1, sticky='e', padx=5)
-        cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
-                               command=controller.destroy)
-        cancel_btn.grid(row=0, column=0, sticky='e')
-        # Favour the left hand column to force everything to the right
-        self.bottom_frame.grid_columnconfigure(0, weight=1)
-        self.bottom_frame.grid_columnconfigure(1, weight=0)
-        self.bottom_frame.grid_columnconfigure(2, weight=0)
+        self.setup_navigation(self.update_sources, lambda:
+                              self.controller.show_frame('ObsWsPass'))
 
     def load_mic_source(self):
         """If there is an existing Mic source, return that value, otherwise
@@ -529,7 +549,51 @@ class ObsAudioSources(SetupPage):
         config['obs']['desktop_source'] = self.desktop_source.get()
         self.controller.show_frame('ObsAlertSources')
 
+    def select_mic_source(self):
+        self.list_to_entry(self.obs_sources, self.mic_source)
+
+    def select_desktop_source(self):
+        self.list_to_entry(self.obs_sources, self.desktop_source)
+
 
 class ObsAlertSources(SetupPage):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
+        self.setup_header(ti.OBSALERT_HEADING, ti.OBSALERT_TEXT, 3)
+        obs_source_label = tk.Label(self.top_frame,
+                                    text=ti.OBSALERT_SOURCE_PROMPT)
+        obs_source_label.grid(row=2, column=0, padx=5)
+        # Setup the first Frame and listbox
+        obs_frame, self.obs_sources = self.setup_list_frame()
+        obs_frame.grid(row=3, column=0, padx=5, rowspan=5)
+        add_source_button = tk.Button(self.top_frame, text=' > ',
+                                      command=self.select_alert_source)
+        add_source_button.grid(row=4, column=1, padx=10)
+        remove_source_button = tk.Button(self.top_frame, text=' < ',
+                                         command=self.remove_alert_source)
+        remove_source_button.grid(row=6, column=1, padx=10)
+        alert_source_label = tk.Label(self.top_frame,
+                                    text=ti.OBSALERT_ALERT_PROMPT)
+        alert_source_label.grid(row=2, column=2, padx=5)
+        alert_frame, self.alert_sources = self.setup_list_frame()
+        alert_frame.grid(row=3, column=2, padx=5, rowspan=5)
+        # Prefer the bottom row to force everything up and the right hand
+        # column to force everything left
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=0)
+        self.top_frame.grid_rowconfigure(2, weight=0)
+        self.top_frame.grid_rowconfigure(3, weight=0)
+        self.top_frame.grid_rowconfigure(4, weight=0)
+        self.top_frame.grid_rowconfigure(5, weight=0)
+        self.top_frame.grid_rowconfigure(6, weight=0)
+        self.top_frame.grid_rowconfigure(7, weight=0)
+        self.top_frame.grid_columnconfigure(0, weight=0)
+        self.top_frame.grid_columnconfigure(1, weight=0)
+        self.top_frame.grid_columnconfigure(2, weight=0)
+        #self.setup_navigation()
+
+    def select_alert_source(self):
+        pass
+
+    def remove_alert_source(self):
+        pass
