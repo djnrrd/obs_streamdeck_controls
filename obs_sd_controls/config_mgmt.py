@@ -8,6 +8,9 @@ from .obs_controls import get_all_sources
 from . import text_includes as ti
 from .conf import CLIENT_ID, REDIRECT_URI
 import webbrowser
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
 
 def load_config():
     """Load the config file and return the ConfigParser object
@@ -591,4 +594,40 @@ class LaunchTwitch(SetupPage):
                   'scope': 'channel:moderate chat:edit chat:read'}
         url += '&'.join([f"{k}={v}" for k, v in params.items()])
         #webbrowser.open_new_tab(url)
+        httpd = threading.Thread(target=self.start_server)
+        httpd.daemon = True
+        httpd.start()
 
+    @staticmethod
+    def start_server():
+        server_address = ('', 8000)
+        httpd = HTTPServer(server_address, TwitchResponseHandler)
+        httpd.serve_forever()
+
+class TwitchResponseHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        base_dir = os.path.dirname(ti.__file__)
+        self.send_response(200)
+        file = 'thanks.js' if self.path == '/thanks.js' \
+            else 'thanks.html'
+        content_type = 'application/ecmascript' if self.path == '/thanks.js' \
+            else 'text/html'
+        with open(os.path.join(base_dir, file), 'r') as f:
+            html = f.read()
+        self.send_header('Content-type', content_type)
+        self.end_headers()
+        self.wfile.write(html.encode())
+        print('GET Request')
+
+    def do_POST(self):
+        data_string = self.rfile.read(int(self.headers['Content-Length']))
+        new_object = json.loads(data_string.decode('utf-8'))
+        self.send_response(202)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        print('POST Request')
+        print(new_object)
+        safe_shut = threading.Thread(target=self.server.shutdown)
+        safe_shut.daemon = True
+        safe_shut.start()
