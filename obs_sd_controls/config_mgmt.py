@@ -589,6 +589,7 @@ class LaunchTwitch(SetupPage):
         url = 'https://id.twitch.tv/oauth2/authorize'
         params = {'client_id': client_id, 'redirect_uri': redirect_uri,
                   'response_type': 'token',
-                  'scope':'channel:moderate chat:edit chat:read'}
+                  'scope': 'channel:moderate chat:edit chat:read'}
+        url += '&'.join([f"{k}={v}" for k, v in params.items()])
+        #webbrowser.open_new_tab(url)
 
-        webbrowser.open_new_tab('http://localhost:8000/#access_token=%3Can%20access%20token%3E&otherstuff=something')

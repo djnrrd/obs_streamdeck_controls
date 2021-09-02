@@ -1,0 +1,2 @@
+CLIENT_ID='CLIENT_ID'
+REDIRECT_URI='http://localhost:8000'
