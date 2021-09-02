@@ -6,6 +6,7 @@ from tkinter import font as tk_font
 from tkinter import messagebox as tk_mb
 from .obs_controls import get_all_sources
 from . import text_includes as ti
+from .conf import CLIENT_ID, REDIRECT_URI
 import webbrowser
 
 def load_config():
@@ -584,10 +585,8 @@ class LaunchTwitch(SetupPage):
         # Disable my next button
         next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
         self.controller.nametowidget(next_button_path)['state'] = 'disabled'
-        client_id = ''
-        redirect_uri = ''
         url = 'https://id.twitch.tv/oauth2/authorize'
-        params = {'client_id': client_id, 'redirect_uri': redirect_uri,
+        params = {'client_id': CLIENT_ID, 'redirect_uri': REDIRECT_URI,
                   'response_type': 'token',
                   'scope': 'channel:moderate chat:edit chat:read'}
         url += '&'.join([f"{k}={v}" for k, v in params.items()])
