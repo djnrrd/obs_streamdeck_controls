@@ -96,8 +96,8 @@ class SetupApp(tk.Tk):
         for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
                   ObsAlertSources, LaunchTwitch):
             page_name = f.__name__
-            frame = f(container, self)
-            frame.grid(row=0, column=0, sticky='nsew', name=page_name)
+            frame = f(container, self, name=page_name.lower())
+            frame.grid(row=0, column=0, sticky='nsew')
             ret_dict[page_name] = frame
         return ret_dict
 
@@ -135,13 +135,13 @@ class SetupPage(tk.Frame):
     :cvar bottom_frame: The navigation frame
     """
 
-    def __init__(self, parent, controller):
-        super().__init__(parent)
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, name=name)
         self.controller = controller
         # Create 2 frames The top one is for the actual config bits and the
         # lower one for navigation
-        self.top_frame = tk.Frame(self)
-        self.bottom_frame = tk.Frame(self)
+        self.top_frame = tk.Frame(self, name='top_frame')
+        self.bottom_frame = tk.Frame(self, name='bottom_frame')
         # Favour the top row, so the bottom row is only as big as it needs to
         # be with a little padding
         self.top_frame.grid(row=0, column=0, sticky='nsew')
@@ -168,13 +168,15 @@ class SetupPage(tk.Frame):
         if back_function:
             next_col = 2
             back_btn = tk.Button(self.bottom_frame, text='Back',
-                                 command=back_function)
+                                 command=back_function, name='back',
+                                 state='normal')
             back_btn.grid(row=0, column=1, sticky='e', padx=5)
         cancel_btn = tk.Button(self.bottom_frame, text='Cancel',
-                               command=self.controller.destroy)
+                               command=self.controller.destroy, name='cancel',
+                               state='normal')
         cancel_btn.grid(row=0, column=0, sticky='e')
         next_btn = tk.Button(self.bottom_frame, text=next_text,
-                             command=next_function)
+                             command=next_function, name='next', state='normal')
         next_btn.grid(row=0, column=next_col, sticky='e')
         # Favour the left hand column to force everything to the right
         self.bottom_frame.grid_columnconfigure(0, weight=1)
@@ -263,8 +265,8 @@ class WelcomePage(SetupPage):
     :type controller: tk.Tk
     """
 
-    def __init__(self, parent, controller):
-        super().__init__(parent, controller)
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, controller, name=name)
         self.setup_header(ti.WELCOME_HEADING, ti.WELCOME_TEXT)
         # Favour the body of the text over the header
         self.top_frame.grid_rowconfigure(0, weight=0)
@@ -293,8 +295,8 @@ class ExistingConfig(SetupPage):
     :param controller: The main application GUI
     :type controller: tk.Tk
     """
-    def __init__(self, parent, controller):
-        super().__init__(parent, controller)
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, controller, name=name)
         self.setup_header(ti.EXISTING_HEADING, ti.EXISTING_TEXT)
         # Favour the body of the text over the header
         self.top_frame.grid_rowconfigure(0, weight=0)
@@ -311,8 +313,8 @@ class ObsWsPass(SetupPage):
     :param controller: The main application GUI
     :type controller: tk.Tk
     """
-    def __init__(self, parent, controller):
-        super().__init__(parent, controller)
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, controller, name=name)
         # Set the password as a tk variable and load it from config if possible
         self.obsws_pass = tk.StringVar()
         self.obsws_pass.set(self.load_password())
@@ -383,8 +385,8 @@ class ObsAudioSources(SetupPage):
     :type controller: tk.Tk
     """
 
-    def __init__(self, parent, controller):
-        super().__init__(parent, controller)
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, controller, name=name)
         # Set the sources as a tk variable and load them from config if possible
         self.mic_source = tk.StringVar()
         self.desktop_source = tk.StringVar()
@@ -492,8 +494,8 @@ class ObsAlertSources(SetupPage):
     :type controller: tk.Tk
     """
 
-    def __init__(self, parent, controller):
-        super().__init__(parent, controller)
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, controller, name=name)
         self.setup_header(ti.OBSALERT_HEADING, ti.OBSALERT_TEXT, 3)
         obs_source_label = tk.Label(self.top_frame,
                                     text=ti.OBSALERT_SOURCE_PROMPT)
@@ -571,12 +573,22 @@ class ObsAlertSources(SetupPage):
 
 class LaunchTwitch(SetupPage):
 
-    def __init__(self, parent, controller):
-        super().__init__(parent, controller)
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, controller, name=name)
         self.setup_header(ti.LAUNCH_TWITCH_HEADING, ti.LAUNCH_TWITCH_TEXT)
         self.setup_navigation(self.launch_browser,
                               lambda: self.controller.show_frame(
                                                             'ObsAlertSources'))
 
     def launch_browser(self):
+        # Disable my next button
+        next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
+        self.controller.nametowidget(next_button_path)['state'] = 'disabled'
+        client_id = ''
+        redirect_uri = ''
+        url = 'https://id.twitch.tv/oauth2/authorize'
+        params = {'client_id': client_id, 'redirect_uri': redirect_uri,
+                  'response_type': 'token',
+                  'scope':'channel:moderate chat:edit chat:read'}
+
         webbrowser.open_new_tab('http://localhost:8000/#access_token=%3Can%20access%20token%3E&otherstuff=something')
