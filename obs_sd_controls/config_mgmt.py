@@ -594,12 +594,12 @@ class LaunchTwitch(SetupPage):
                   'scope': 'channel:moderate chat:edit chat:read'}
         url += '&'.join([f"{k}={v}" for k, v in params.items()])
         #webbrowser.open_new_tab(url)
-        httpd = threading.Thread(target=self.start_server)
+        httpd = threading.Thread(target=self.start_web_server)
         httpd.daemon = True
         httpd.start()
 
     @staticmethod
-    def start_server():
+    def start_web_server():
         server_address = ('', 8000)
         httpd = HTTPServer(server_address, TwitchResponseHandler)
         httpd.serve_forever()
