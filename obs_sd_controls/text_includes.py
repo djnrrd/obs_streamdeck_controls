@@ -29,3 +29,7 @@ OBSALERT_TEXT = 'Please select the browser sources used for notifications ' \
                 '"Panic Button"'
 OBSALERT_SOURCE_PROMPT = 'OBS Sources'
 OBSALERT_ALERT_PROMPT = 'Notification/Chat Sources'
+
+LAUNCH_TWITCH_HEADING = 'Authorise OBS Streamdeck CTL with Twitch'
+LAUNCH_TWITCH_TEXT = 'Click Next to launch a new web browser tab and ' \
+                     'authorise OBS Streamdeck CTL to use your twitch account.'

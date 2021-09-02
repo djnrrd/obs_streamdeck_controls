@@ -6,7 +6,7 @@ from tkinter import font as tk_font
 from tkinter import messagebox as tk_mb
 from .obs_controls import get_all_sources
 from . import text_includes as ti
-
+import webbrowser
 
 def load_config():
     """Load the config file and return the ConfigParser object
@@ -74,13 +74,13 @@ class SetupApp(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
         # Set the main app container frame which again only has one square
         # and fills everything
-        container = tk.Frame(self)
+        container = tk.Frame(self, name='main_frame')
         container.grid(row=0, column=0, sticky='nsew')
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
         self.frames = self.load_frames(container)
-        self.show_frame('WelcomePage')
+        self.show_frame('LaunchTwitch')
 
     def load_frames(self, container):
         """Loop through the frames defined in this module, create them and add
@@ -94,10 +94,10 @@ class SetupApp(tk.Tk):
         """
         ret_dict = dict()
         for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
-                  ObsAlertSources):
+                  ObsAlertSources, LaunchTwitch):
             page_name = f.__name__
             frame = f(container, self)
-            frame.grid(row=0, column=0, sticky='nsew')
+            frame.grid(row=0, column=0, sticky='nsew', name=page_name)
             ret_dict[page_name] = frame
         return ret_dict
 
@@ -567,3 +567,16 @@ class ObsAlertSources(SetupPage):
         config['obs']['alert_sources'] = ':'.join(alerts)
         save_config(config)
         self.controller.destroy()
+
+
+class LaunchTwitch(SetupPage):
+
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+        self.setup_header(ti.LAUNCH_TWITCH_HEADING, ti.LAUNCH_TWITCH_TEXT)
+        self.setup_navigation(self.launch_browser,
+                              lambda: self.controller.show_frame(
+                                                            'ObsAlertSources'))
+
+    def launch_browser(self):
+        webbrowser.open_new_tab('http://localhost:8000/#access_token=%3Can%20access%20token%3E&otherstuff=something')
