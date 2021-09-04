@@ -100,7 +100,7 @@ class SetupApp(tk.Tk):
         """
         ret_dict = dict()
         for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
-                  ObsAlertSources, LaunchTwitch):
+                  ObsAlertSources, LaunchTwitch, SetupComplete):
             page_name = f.__name__
             frame = f(container, self, name=page_name.lower())
             frame.grid(row=0, column=0, sticky='nsew')
@@ -573,8 +573,7 @@ class ObsAlertSources(SetupPage):
         alerts = self.alert_sources.get(0, 'end')
         config = self.controller.obs_config
         config['obs']['alert_sources'] = ':'.join(alerts)
-        save_config(config)
-        self.controller.destroy()
+
 
 
 class LaunchTwitch(SetupPage):
@@ -601,7 +600,7 @@ class LaunchTwitch(SetupPage):
         url_params = urlencode(params)
         url = f"{base_url}?{url_params}"
         # Placeholder while building. don't want to hammer Twitch
-        url = 'http://localhost:8000'
+        url = 'http://localhost:8000/'
         webbrowser.open_new_tab(url)
         # Launch the Web Server in a separate thread to wait for the response
         httpd = threading.Thread(target=self.start_web_server)
@@ -619,6 +618,12 @@ class LaunchTwitch(SetupPage):
         httpd.serve_forever()
 
     def return_from_web_server(self, return_object):
+        """Receive the Twitch object from the web server and update the
+        config. Finally take user to the last frame
+
+        :param return_object:
+        :return:
+        """
         # Verify we've got the keys and values we expect:
         expected_keys = ('#access_token', 'scope', 'token_type')
         for key in return_object:
@@ -632,6 +637,25 @@ class LaunchTwitch(SetupPage):
         config = self.controller.obs_config
         None if config.has_section('twitch') else config.add_section('twitch')
         config['twitch']['oauth_token'] = return_object['#access_token']
+        save_config(config)
+        next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
+        self.controller.nametowidget(next_button_path)['state'] = 'active'
+        self.controller.show_frame('SetupComplete')
+
+
+class SetupComplete(SetupPage):
+
+    def __init__(self, parent, controller, name=''):
+        super().__init__(parent, controller, name=name)
+        self.setup_header(ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
+        self.setup_navigation(self.complete,
+                              lambda: self.controller.show_frame(
+                                                            'LaunchTwitch'),
+                              final=True)
+
+    def complete(self):
+        save_config(self.controller.obs_config)
+        self.controller.destroy()
 
 
 class TwitchResponseHandler(BaseHTTPRequestHandler):

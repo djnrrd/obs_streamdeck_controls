@@ -33,3 +33,6 @@ OBSALERT_ALERT_PROMPT = 'Notification/Chat Sources'
 LAUNCH_TWITCH_HEADING = 'Authorise OBS Streamdeck CTL with Twitch'
 LAUNCH_TWITCH_TEXT = 'Click Next to launch a new web browser tab and ' \
                      'authorise OBS Streamdeck CTL to use your twitch account.'
+
+COMPLETE_HEADING = 'Setup Complete'
+COMPLETE_TEXT = 'Click Finish to close this setup wizard'
