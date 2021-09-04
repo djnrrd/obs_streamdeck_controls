@@ -13,6 +13,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 from functools import partial
 from urllib.parse import urlencode
+from simpleobsws import ConnectionFailure
 
 def load_config():
     """Load the config file and return the ConfigParser object
@@ -243,20 +244,29 @@ class SetupPage(tk.Frame):
         for item in items:
             list_b.insert('end', item)
 
-    def setup_list_frame(self, select_mode='single'):
+    def setup_list_frame(self, header='', select_mode='single'):
         """Create a frame for a list box with a scroll bar to be added to the
         top frame. Weighting of the outer grid sections is not completed in
         this function, and should be completed after the other components have
         been laid out
 
+        :param header: Header text for the frame
+        :type header: str
+        :param select_mode: Value for select_mode for the Listbox widget
+        :type select_mode: str
         :return: The frame and listbox for further interaction
         :rtype: (tk.Frame, tk.Listbox)
         """
         frame = tk.Frame(self.top_frame)
         list_box = tk.Listbox(frame, selectmode=select_mode)
-        list_box.grid(row=0, column=0)
+        row_start = 0
+        if header:
+            row_start = 1
+            header_label = tk.Label(frame, text=header)
+            header_label.grid(row=0, column=0, columnspan=2)
+        list_box.grid(row=row_start, column=0)
         scroll = tk.Scrollbar(frame)
-        scroll.grid(row=0, column=1, sticky='ns')
+        scroll.grid(row=row_start, column=1, sticky='ns')
         scroll.config(command=list_box.yview)
         list_box.config(yscrollcommand=scroll.set)
         return frame, list_box
@@ -379,7 +389,7 @@ class ObsWsPass(SetupPage):
             self.controller.frames['ObsAudioSources'].\
                 load_obs_sources(obs_sources)
             self.controller.show_frame('ObsAudioSources')
-        except (ConnectionRefusedError, NameError):
+        except (ConnectionRefusedError, NameError, ConnectionFailure):
             self.controller.clear_busy()
             tk_mb.showwarning(title=ti.OBSWSPASS_WARN_HEADER,
                               message=ti.OBSWSPASS_WARN)
@@ -403,9 +413,10 @@ class ObsAudioSources(SetupPage):
         self.desktop_source.set(self.load_desktop_source())
         # Layout
         self.setup_header(ti.OBSAUDIO_HEADING, ti.OBSAUDIO_TEXT, 3)
-        listbox_frame, self.obs_sources = self.setup_list_frame()
+        listbox_frame, self.obs_sources = self.setup_list_frame(
+            ti.OBSALERT_SOURCE_PROMPT)
         listbox_frame.grid(row=2, column=0, rowspan=6, padx=5, sticky='ne')
-        mic_source_button = tk.Button(self.top_frame, text=' << >> ',
+        mic_source_button = tk.Button(self.top_frame, text=' <<  >> ',
                                       command=self.select_mic_source)
         mic_source_button.grid(row=3, column=1, padx=10, sticky='ew')
         mic_source_label = tk.Label(self.top_frame, text=ti.OBSAUDIO_MIC_PROMPT)
@@ -413,7 +424,7 @@ class ObsAudioSources(SetupPage):
         mic_source_entry = tk.Entry(self.top_frame,
                                     textvariable=self.mic_source)
         mic_source_entry.grid(row=3, column=2, sticky='w')
-        desktop_source_button = tk.Button(self.top_frame, text=' << >> ',
+        desktop_source_button = tk.Button(self.top_frame, text=' <<  >> ',
                                           command=self.select_desktop_source)
         desktop_source_button.grid(row=6, column=1, padx=10, sticky='ew')
         desktop_source_label = tk.Label(self.top_frame,
@@ -506,23 +517,19 @@ class ObsAlertSources(SetupPage):
     def __init__(self, parent, controller, name=''):
         super().__init__(parent, controller, name=name)
         self.setup_header(ti.OBSALERT_HEADING, ti.OBSALERT_TEXT, 3)
-        obs_source_label = tk.Label(self.top_frame,
-                                    text=ti.OBSALERT_SOURCE_PROMPT)
-        obs_source_label.grid(row=2, column=0, padx=5, sticky='e')
         # Setup the first Frame and listbox
-        obs_frame, self.obs_sources = self.setup_list_frame('extended')
-        obs_frame.grid(row=3, column=0, padx=5, rowspan=5, sticky='e')
+        obs_frame, self.obs_sources = self.setup_list_frame(
+            ti.OBSALERT_SOURCE_PROMPT, 'extended')
+        obs_frame.grid(row=2, column=0, padx=5, rowspan=5, sticky='e')
         add_source_button = tk.Button(self.top_frame, text=' >> ',
                                       command=self.select_alert_source)
-        add_source_button.grid(row=4, column=1, padx=10)
+        add_source_button.grid(row=3, column=1, padx=10)
         remove_source_button = tk.Button(self.top_frame, text=' << ',
                                          command=self.remove_alert_source)
-        remove_source_button.grid(row=6, column=1, padx=10)
-        alert_source_label = tk.Label(self.top_frame,
-                                      text=ti.OBSALERT_ALERT_PROMPT)
-        alert_source_label.grid(row=2, column=2, padx=5, sticky='w')
-        alert_frame, self.alert_sources = self.setup_list_frame('extended')
-        alert_frame.grid(row=3, column=2, padx=5, rowspan=5, sticky='w')
+        remove_source_button.grid(row=5, column=1, padx=10)
+        alert_frame, self.alert_sources = self.setup_list_frame(
+            ti.OBSALERT_ALERT_PROMPT, 'extended')
+        alert_frame.grid(row=2, column=2, padx=5, rowspan=5, sticky='w')
         # Prefer the bottom row to force everything up and the right hand
         # column to force everything left
         self.top_frame.grid_rowconfigure(0, weight=0)
