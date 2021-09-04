@@ -11,6 +11,8 @@ import webbrowser
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
+from functools import partial
+from urllib.parse import urlencode
 
 def load_config():
     """Load the config file and return the ConfigParser object
@@ -585,28 +587,66 @@ class LaunchTwitch(SetupPage):
                                                             'ObsAlertSources'))
 
     def launch_browser(self):
+        """Disable the Next button, launch the user's web browser and take
+        them to the Twitch OAuth page.  Start a web server to listen for the
+        response"""
         # Disable my next button
         next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
         self.controller.nametowidget(next_button_path)['state'] = 'disabled'
-        url = 'https://id.twitch.tv/oauth2/authorize'
+
+        base_url = 'https://id.twitch.tv/oauth2/authorize'
         params = {'client_id': CLIENT_ID, 'redirect_uri': REDIRECT_URI,
                   'response_type': 'token',
                   'scope': 'channel:moderate chat:edit chat:read'}
-        url += '&'.join([f"{k}={v}" for k, v in params.items()])
-        #webbrowser.open_new_tab(url)
+        url_params = urlencode(params)
+        url = f"{base_url}?{url_params}"
+        # Placeholder while building. don't want to hammer Twitch
+        url = 'http://localhost:8000'
+        webbrowser.open_new_tab(url)
+        # Launch the Web Server in a separate thread to wait for the response
         httpd = threading.Thread(target=self.start_web_server)
         httpd.daemon = True
         httpd.start()
 
-    @staticmethod
-    def start_web_server():
+    def start_web_server(self):
+        """Start a web server using the custom response handler which will
+        have a reference to the controller app to return the values from twitch.
+        """
+        # Use partial to add custom arguments to the TwitchResponseHandler
+        handler = partial(TwitchResponseHandler, self.controller)
         server_address = ('', 8000)
-        httpd = HTTPServer(server_address, TwitchResponseHandler)
+        httpd = HTTPServer(server_address, handler)
         httpd.serve_forever()
+
+    def return_from_web_server(self, return_object):
+        # Verify we've got the keys and values we expect:
+        expected_keys = ('#access_token', 'scope', 'token_type')
+        for key in return_object:
+            if key not in expected_keys:
+                raise KeyError('Did not receive expected keys from Twitch')
+        if return_object['scope'] != 'channel:moderate chat:edit chat:read':
+            raise ValueError('Did not match scope requested')
+        if return_object['token_type'] != 'bearer':
+            raise ValueError('Did not receive expected token_type')
+        # Update the config file with the access_token
+        config = self.controller.obs_config
+        None if config.has_section('twitch') else config.add_section('twitch')
+        config['twitch']['oauth_token'] = return_object['#access_token']
+
 
 class TwitchResponseHandler(BaseHTTPRequestHandler):
 
+    def __init__(self, controller, *args, **kwargs):
+        """Override the init method to add the main setup wizard app
+        controller so it can be referenced on the POST request"""
+        self.controller = controller
+        super().__init__(*args, **kwargs)
+
     def do_GET(self):
+        """GET only serves 2 files, thanks.html and thanks.js. As the twitch
+        response is in the document hash, it's easier to get through
+        Javascript
+        """
         base_dir = os.path.dirname(ti.__file__)
         self.send_response(200)
         file = 'thanks.js' if self.path == '/thanks.js' \
@@ -618,16 +658,21 @@ class TwitchResponseHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', content_type)
         self.end_headers()
         self.wfile.write(html.encode())
-        print('GET Request')
 
     def do_POST(self):
+        """Receive the Twitch tokens via a POST from thanks.js. Update the
+        original setup app with the values received and shut down the web
+        server"""
+        # Read the POST body and convert from JSON to a dict.
         data_string = self.rfile.read(int(self.headers['Content-Length']))
         new_object = json.loads(data_string.decode('utf-8'))
+        # Send headers
         self.send_response(202)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        print('POST Request')
-        print(new_object)
+        # Pass the twitch object back to the setup app and shut down the server
+        self.controller.frames['LaunchTwitch'].\
+            return_from_web_server(new_object)
         safe_shut = threading.Thread(target=self.server.shutdown)
         safe_shut.daemon = True
         safe_shut.start()
