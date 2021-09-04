@@ -621,8 +621,8 @@ class LaunchTwitch(SetupPage):
         """Receive the Twitch object from the web server and update the
         config. Finally take user to the last frame
 
-        :param return_object:
-        :return:
+        :param return_object: The JSON object returned from the thanks.js file
+        :type return_object: dict
         """
         # Verify we've got the keys and values we expect:
         expected_keys = ('#access_token', 'scope', 'token_type')
