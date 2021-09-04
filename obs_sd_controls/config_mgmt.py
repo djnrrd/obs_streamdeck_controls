@@ -86,7 +86,7 @@ class SetupApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
         self.frames = self.load_frames(container)
-        self.show_frame('LaunchTwitch')
+        self.show_frame('WelcomePage')
 
     def load_frames(self, container):
         """Loop through the frames defined in this module, create them and add
@@ -308,7 +308,8 @@ class ExistingConfig(SetupPage):
         self.top_frame.grid_rowconfigure(0, weight=0)
         self.top_frame.grid_rowconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(0, weight=1)
-        self.setup_navigation(lambda: controller.show_frame('ObsWsPass'))
+        self.setup_navigation(lambda: controller.show_frame('ObsWsPass'),
+                              lambda: controller.show_frame('WelcomePage'))
 
 
 class ObsWsPass(SetupPage):
@@ -327,18 +328,20 @@ class ObsWsPass(SetupPage):
         # Layout
         self.setup_header(ti.OBSWSPASS_HEADING, ti.OBSWSPASS_TEXT, 2)
         password_prompt = tk.Label(self.top_frame, text=ti.OBSWSPASS_PROMPT)
-        password_prompt.grid(row=2, column=0, sticky='ne', padx=5)
+        password_prompt.grid(row=2, column=0, sticky='e', padx=5)
         obsws_pass_entry = tk.Entry(self.top_frame,
                                     textvariable=self.obsws_pass)
-        obsws_pass_entry.grid(row=2, column=1, sticky='nw')
-        # Prefer the bottom row to force everything up and the right hand
-        # column to force everything left
+        obsws_pass_entry.grid(row=2, column=1, sticky='w')
+        # Prefer the bottom row to force everything up and give the columns
+        # equal weight (not zero as that ruins the padding in the header) to
+        # force everything centered
         self.top_frame.grid_rowconfigure(0, weight=0)
         self.top_frame.grid_rowconfigure(1, weight=0)
         self.top_frame.grid_rowconfigure(2, weight=1)
-        self.top_frame.grid_columnconfigure(0, weight=0)
+        self.top_frame.grid_columnconfigure(0, weight=1)
         self.top_frame.grid_columnconfigure(1, weight=1)
-        self.setup_navigation(self.update_password)
+        self.setup_navigation(self.update_password,
+                              lambda: controller.show_frame('WelcomePage'))
 
     def load_password(self):
         """If there is an existing password, return that value.
@@ -402,7 +405,7 @@ class ObsAudioSources(SetupPage):
         self.setup_header(ti.OBSAUDIO_HEADING, ti.OBSAUDIO_TEXT, 3)
         listbox_frame, self.obs_sources = self.setup_list_frame()
         listbox_frame.grid(row=2, column=0, rowspan=6, padx=5, sticky='ne')
-        mic_source_button = tk.Button(self.top_frame, text=' > ',
+        mic_source_button = tk.Button(self.top_frame, text=' << >> ',
                                       command=self.select_mic_source)
         mic_source_button.grid(row=3, column=1, padx=10, sticky='ew')
         mic_source_label = tk.Label(self.top_frame, text=ti.OBSAUDIO_MIC_PROMPT)
@@ -410,7 +413,7 @@ class ObsAudioSources(SetupPage):
         mic_source_entry = tk.Entry(self.top_frame,
                                     textvariable=self.mic_source)
         mic_source_entry.grid(row=3, column=2, sticky='w')
-        desktop_source_button = tk.Button(self.top_frame, text=' > ',
+        desktop_source_button = tk.Button(self.top_frame, text=' << >> ',
                                           command=self.select_desktop_source)
         desktop_source_button.grid(row=6, column=1, padx=10, sticky='ew')
         desktop_source_label = tk.Label(self.top_frame,
@@ -428,7 +431,7 @@ class ObsAudioSources(SetupPage):
         self.top_frame.grid_rowconfigure(4, weight=0)
         self.top_frame.grid_rowconfigure(5, weight=0)
         self.top_frame.grid_rowconfigure(6, weight=0)
-        self.top_frame.grid_columnconfigure(0, weight=0)
+        self.top_frame.grid_columnconfigure(0, weight=1)
         self.top_frame.grid_columnconfigure(1, weight=0)
         self.top_frame.grid_columnconfigure(2, weight=1)
         self.setup_navigation(self.update_sources, lambda:
@@ -491,8 +494,8 @@ class ObsAudioSources(SetupPage):
 
 
 class ObsAlertSources(SetupPage):
-    """A Page to determine the Notifcation and chat sources in OBS that would be
-    disabled in the Panic Button functions.
+    """A Page to determine the Notification and chat sources in OBS that
+    would be disabled in the Panic Button functions.
 
     :param parent: The parent frame to attach this frame to
     :type parent: tk.Frame
@@ -505,21 +508,21 @@ class ObsAlertSources(SetupPage):
         self.setup_header(ti.OBSALERT_HEADING, ti.OBSALERT_TEXT, 3)
         obs_source_label = tk.Label(self.top_frame,
                                     text=ti.OBSALERT_SOURCE_PROMPT)
-        obs_source_label.grid(row=2, column=0, padx=5)
+        obs_source_label.grid(row=2, column=0, padx=5, sticky='e')
         # Setup the first Frame and listbox
         obs_frame, self.obs_sources = self.setup_list_frame('extended')
-        obs_frame.grid(row=3, column=0, padx=5, rowspan=5)
-        add_source_button = tk.Button(self.top_frame, text=' > ',
+        obs_frame.grid(row=3, column=0, padx=5, rowspan=5, sticky='e')
+        add_source_button = tk.Button(self.top_frame, text=' >> ',
                                       command=self.select_alert_source)
         add_source_button.grid(row=4, column=1, padx=10)
-        remove_source_button = tk.Button(self.top_frame, text=' < ',
+        remove_source_button = tk.Button(self.top_frame, text=' << ',
                                          command=self.remove_alert_source)
         remove_source_button.grid(row=6, column=1, padx=10)
         alert_source_label = tk.Label(self.top_frame,
-                                    text=ti.OBSALERT_ALERT_PROMPT)
-        alert_source_label.grid(row=2, column=2, padx=5)
+                                      text=ti.OBSALERT_ALERT_PROMPT)
+        alert_source_label.grid(row=2, column=2, padx=5, sticky='w')
         alert_frame, self.alert_sources = self.setup_list_frame('extended')
-        alert_frame.grid(row=3, column=2, padx=5, rowspan=5)
+        alert_frame.grid(row=3, column=2, padx=5, rowspan=5, sticky='w')
         # Prefer the bottom row to force everything up and the right hand
         # column to force everything left
         self.top_frame.grid_rowconfigure(0, weight=0)
@@ -534,8 +537,7 @@ class ObsAlertSources(SetupPage):
         self.top_frame.grid_columnconfigure(1, weight=0)
         self.top_frame.grid_columnconfigure(2, weight=1)
         self.setup_navigation(self.update_sources, lambda:
-                              self.controller.show_frame('ObsAudioSources'),
-                              True)
+                              self.controller.show_frame('ObsAudioSources'))
         # Load the default alert sources after the layout since we're adding
         # directly to the listbox
         self.load_default_alert_sources()
@@ -573,14 +575,25 @@ class ObsAlertSources(SetupPage):
         alerts = self.alert_sources.get(0, 'end')
         config = self.controller.obs_config
         config['obs']['alert_sources'] = ':'.join(alerts)
-
+        self.controller.show_frame('LaunchTwitch')
 
 
 class LaunchTwitch(SetupPage):
+    """A Page to launch Twitch Authorisation in a web browser and handle the
+    return with a small web server.
+
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    """
 
     def __init__(self, parent, controller, name=''):
         super().__init__(parent, controller, name=name)
         self.setup_header(ti.LAUNCH_TWITCH_HEADING, ti.LAUNCH_TWITCH_TEXT)
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=1)
+        self.top_frame.grid_columnconfigure(0, weight=1)
         self.setup_navigation(self.launch_browser,
                               lambda: self.controller.show_frame(
                                                             'ObsAlertSources'))
@@ -648,6 +661,9 @@ class SetupComplete(SetupPage):
     def __init__(self, parent, controller, name=''):
         super().__init__(parent, controller, name=name)
         self.setup_header(ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=1)
+        self.top_frame.grid_columnconfigure(0, weight=1)
         self.setup_navigation(self.complete,
                               lambda: self.controller.show_frame(
                                                             'LaunchTwitch'),
