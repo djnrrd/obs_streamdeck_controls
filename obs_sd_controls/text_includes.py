@@ -44,11 +44,17 @@ START_STOP_TEXT = 'The Start/Stop function can be used to lock down your chat' \
                   ' while you\'re offline, limiting what can happen while you ' \
                   'and your mods aren\'t watching'
 START_STOP_CHECK = 'Enable Start/Stop safety feature?'
-START_STOP_EMOTE = 'Emote only mode'
-START_STOP_FOLLOW = 'Follower only mode'
-START_STOP_FOLLOW_TIME = 'Follow duration before allowing chat (Examples ' \
+
+PANIC_BUTTON_HEADING = 'Panic Button Safety Features'
+PANIC_BUTTON_TEXT = 'The Panic Button function can be used to lock down your ' \
+                    'chat'
+
+
+SAFETY_EMOTE = 'Enable emote only mode additionally'
+SAFETY_FOLLOW = 'Follower only mode'
+SAFETY_FOLLOW_TIME = 'Follow duration before allowing chat (Examples ' \
                          '\'3h\', \'2d\', \'1w\')'
-START_STOP_SUB = 'Subscriber only mode'
+SAFETY_SUB = 'Subscriber only mode'
 
 
 

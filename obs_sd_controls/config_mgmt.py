@@ -88,7 +88,7 @@ class SetupApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
         self.frames = self.load_frames(container)
-        self.show_frame('WelcomePage')
+        self.show_frame('StartStopOptions')
 
     def load_frames(self, container):
         """Loop through the frames defined in this module, create them and add
@@ -101,11 +101,9 @@ class SetupApp(tk.Tk):
         :rtype: dict
         """
         ret_dict = dict()
-        #for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
-        #          ObsAlertSources, LaunchTwitch, SetupComplete,
-        #          StartStopOptions):
         for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
-                  ObsAlertSources):
+                  ObsAlertSources, LaunchTwitch, StartStopOptions,
+                  PanicButtonOptions, SetupComplete):
             page_name = f.__name__
             frame = f(container, self, name=page_name.lower())
             frame.grid(row=0, column=0, sticky='nsew')
@@ -147,13 +145,24 @@ class SetupPage(tk.Frame):
         HEADING_TEXT), to provide to the top frame
     :type headers: tuple
     :cvar controller: The main application GUI
-    :cvar top_frame: The main frame for the wizard pages
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
     :cvar bottom_frame: The navigation frame
+    :cvar safety_check_value: A Tkinter BooleanVar for safety pages
+    :cvar emote_option: A Tkinter BooleanVar for safety pages
+    :cvar safety_option: A Tkinter StringVar for safety pages
+    :cvar follow_time: A Tkinter StringVar for safety pages
     """
 
     def __init__(self, parent, controller, name='', headers=(), footers=()):
         super().__init__(parent, name=name)
         self.controller = controller
+        # Since the safety check options are used twice set the variables here
+        self.safety_check_value = tk.BooleanVar()
+        self.emote_option = tk.BooleanVar()
+        self.safety_option = tk.StringVar()
+        self.follow_time = tk.StringVar()
+        # Layouts
         self._layout_frames()
         self._setup_header(*headers)
         self._setup_footer(*footers)
@@ -291,6 +300,16 @@ class SetupPage(tk.Frame):
         return frame
 
     def get_list_frame_lbx(self, name, target_frame='middle_frame'):
+        """Return the listbox widget that was created in a frame.
+
+        :param name: The name of the listbox/frame widget created earlier
+        :type name: str
+        :param target_frame: The name of the frame that contains the
+            listbox/frame
+        :type target_frame: str
+        :return: The listbox widget
+        :rtype: tk.Listbox
+        """
         screen_name = str(self)
         lbx_path = f"{screen_name}.{target_frame}.{name}_frame.{name}_lbx"
         return self.controller.nametowidget(lbx_path)
@@ -314,6 +333,80 @@ class SetupPage(tk.Frame):
         for name in widgets:
             next_button_path = f"{screen_name}.{target_frame}.{name}"
             self.controller.nametowidget(next_button_path)['state'] = state
+
+    def chat_safety_options(self, check_text):
+        """Render the safety options. This has been moved up to the parent
+        class as 2 setup pages will require it
+
+        :param check_text: the text to render next to the enable check button
+        :type check_text: str
+        """
+        safety_chk = tk.Checkbutton(self.middle_frame,
+                                    text=check_text,
+                                    command=self.safety_check_changed,
+                                    variable=self.safety_check_value)
+        safety_chk.grid(row=1, column=0, sticky='nw', padx=10)
+        emote_chk = tk.Checkbutton(self.middle_frame, text=ti.SAFETY_EMOTE,
+                                   variable=self.emote_option,
+                                   state='disabled', name='emote_chk')
+        follower_rdo = tk.Radiobutton(self.middle_frame,
+                                      text=ti.SAFETY_FOLLOW,
+                                      variable=self.safety_option,
+                                      value='FOLLOWER', state='disabled',
+                                      name='follower_rdo',
+                                      command=self.safety_radio_change)
+        follow_time_ety = tk.Entry(self.middle_frame,
+                                   textvariable=self.follow_time,
+                                   state='disabled', name='follow_time_ety')
+        follow_time_lbl = tk.Label(self.middle_frame,
+                                   text=ti.SAFETY_FOLLOW_TIME,
+                                   name='follow_time_lbl', state='disabled')
+        sub_rdo = tk.Radiobutton(self.middle_frame, text=ti.SAFETY_SUB,
+                                 variable=self.safety_option,
+                                 value='SUBSCRIBER', state='disabled',
+                                 name='sub_rdo',
+                                 command=self.safety_radio_change)
+        follower_rdo.grid(row=2, column=0, sticky='nw', padx=10)
+        follow_time_ety.grid(row=2, column=1, sticky='nw', padx=10)
+        follow_time_lbl.grid(row=3, column=1, sticky='nw', padx=10)
+        sub_rdo.grid(row=3, column=0, sticky='nw', padx=10)
+        emote_chk.grid(row=4, column=0, sticky='nw', padx=10)
+        self.middle_frame.grid_rowconfigure(0, weight=0)
+        self.middle_frame.grid_rowconfigure(1, weight=0)
+        self.middle_frame.grid_rowconfigure(2, weight=0)
+        self.middle_frame.grid_rowconfigure(3, weight=0)
+        self.middle_frame.grid_rowconfigure(4, weight=0)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(1, weight=0)
+
+    def safety_check_changed(self):
+        self.enable_disable_widgets(self.safety_check_value.get(),
+                                    ('emote_chk', 'follower_rdo', 'sub_rdo'))
+
+    def safety_radio_change(self):
+        self.enable_disable_widgets(self.safety_option.get() == 'FOLLOWER',
+                                    ('follow_time_ety', 'follow_time_lbl'))
+
+    def update_safety(self, section_name, next_frame):
+        """Get the updated value from the entry box and update the config.
+        Before showing the next frame, load the sources from OBS
+
+        :param section_name: The name for the config section
+        :type section_name: str
+        :param next_frame: The name of the next frame to load after updating
+            the config
+        :type next_frame: str
+        """
+        config = self.controller.obs_config
+        None if config.has_section(section_name) else \
+            config.add_section(section_name)
+        config[section_name]['enabled'] = str(self.safety_check_value.get())
+        if self.safety_check_value.get():
+            config[section_name]['method'] = self.safety_option.get()
+            if self.safety_option.get() == 'FOLLOWER':
+                config[section_name]['follow_time'] = self.follow_time.get()
+            config[section_name]['emote_mode'] = str(self.emote_option.get())
+        self.controller.show_frame(next_frame)
 
 
 class WelcomePage(SetupPage):
@@ -463,15 +556,14 @@ class ObsAudioSources(SetupPage):
         self.desktop_source = tk.StringVar()
         super().__init__(parent, controller, name, headers, footers)
         self.mic_source.set(self.load_mic_source())
+        self.desktop_source.set(self.load_desktop_source())
         self.obs_sources = self.get_list_frame_lbx('obs_sources')
         
     def _layout_frames(self):
         super()._layout_frames()
-        # todo: see if I can split out the below, perhaps by using unique
-        #  names for the frames
-        listbox_frame = self.setup_list_frame(ti.OBSALERT_SOURCE_PROMPT,
-                                              'obs_sources')
-        listbox_frame.grid(row=0, column=0, rowspan=6, padx=5, sticky='ne')
+        obs_lbxf = self.setup_list_frame(ti.OBSALERT_SOURCE_PROMPT,
+                                         'obs_sources')
+        obs_lbxf.grid(row=0, column=0, rowspan=6, padx=5, sticky='ne')
         mic_source_btn = tk.Button(self.middle_frame, text=' <<  >> ',
                                    command=self.select_mic_source)
         mic_source_btn.grid(row=2, column=1, padx=10, sticky='ew')
@@ -718,77 +810,42 @@ class StartStopOptions(SetupPage):
 
     def __init__(self, parent, controller, name=''):
         headers = (ti.START_STOP_HEADING, ti.START_STOP_TEXT)
-        footers = (self.complete,
+        footers = (self.update_safety,
                    lambda: self.controller.show_frame('LaunchTwitch'))
-        self.safety_check_value = tk.BooleanVar()
-        self.safety_options = tk.StringVar()
-        self.follow_time = tk.StringVar()
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
         super()._layout_frames()
-        safety_check = tk.Checkbutton(self.middle_frame,
-                                      text=ti.START_STOP_CHECK,
-                                      command=self.safety_check_changed,
-                                      variable=self.safety_check_value)
-        safety_check.grid(row=1, column=0, sticky='nw', padx=10)
-        emote_rdo = tk.Radiobutton(self.middle_frame, text=ti.START_STOP_EMOTE,
-                                   variable=self.safety_options,
-                                   value='emote', state='disabled',
-                                   name='emote',
-                                   command=self.safety_radio_change)
-        follower_rdo = tk.Radiobutton(self.middle_frame, text=ti.START_STOP_FOLLOW,
-                                      variable=self.safety_options,
-                                      value='follower', state='disabled',
-                                      name='follower',
-                                      command=self.safety_radio_change)
-        follow_time = tk.Entry(self.middle_frame, textvariable=self.follow_time,
-                               state='disabled', name='follow_time')
-        follow_time_label = tk.Label(self.middle_frame,
-                                     text=ti.START_STOP_FOLLOW_TIME,
-                                     name='follow_time_label')
-        sub_rdo = tk.Radiobutton(self.middle_frame, text=ti.START_STOP_SUB,
-                                 variable=self.safety_options, value='sub',
-                                 state='disabled', name='sub',
-                                 command=self.safety_radio_change)
-        emote_rdo.grid(row=2, column=0, sticky='nw', padx=10)
-        follower_rdo.grid(row=3, column=0, sticky='nw', padx=10)
-        follow_time.grid(row=3, column=1, sticky='nw', padx=10)
-        follow_time_label.grid(row=4, column=1, sticky='nw', padx=10)
-        sub_rdo.grid(row=4, column=0, sticky='nw', padx=10)
-        self.middle_frame.grid_rowconfigure(0, weight=0)
-        self.middle_frame.grid_rowconfigure(1, weight=0)
-        self.middle_frame.grid_rowconfigure(2, weight=0)
-        self.middle_frame.grid_rowconfigure(3, weight=0)
-        self.middle_frame.grid_rowconfigure(4, weight=0)
-        self.middle_frame.grid_columnconfigure(0, weight=1)
-        self.middle_frame.grid_columnconfigure(1, weight=0)
+        self.chat_safety_options(ti.START_STOP_CHECK)
 
-    def safety_check_changed(self):
-        self.enable_disable_widgets(self.safety_check_value.get(),
-                                    ('emote', 'follower', 'sub'))
+    def update_safety(self):
+        super().update_safety('start_stop_safety', 'PanicButtonOptions')
 
-    def safety_radio_change(self):
-        self.enable_disable_widgets(self.safety_options.get() == 'follower',
-                                    ('follow_time', 'follow_time_label'))
 
-    def complete(self):
-        save_config(self.controller.obs_config)
-        self.controller.destroy()
+class PanicButtonOptions(SetupPage):
+
+    def __init__(self, parent, controller, name=''):
+        headers = (ti.PANIC_BUTTON_HEADING, ti.PANIC_BUTTON_TEXT)
+        footers = (self.update_safety,
+                   lambda: self.controller.show_frame('StartStopOptions'))
+        super().__init__(parent, controller, name, headers, footers)
+
+    def _layout_frames(self):
+        super()._layout_frames()
+        self.chat_safety_options(ti.START_STOP_CHECK)
+
+    def update_safety(self):
+        super().update_safety('panic_button_safety', 'SetupComplete')
 
 
 class SetupComplete(SetupPage):
 
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        self._setup_header(ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=1)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self._setup_footer(self.complete,
-                           lambda: self.controller.show_frame(
-                                                            'LaunchTwitch'),
-                           final=True)
+        headers = (ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
+        footers = (self.complete,
+                   lambda: self.controller.show_frame('LaunchTwitch'),
+                   True)
+        super().__init__(parent, controller, name, headers, footers)
 
     def complete(self):
         save_config(self.controller.obs_config)
