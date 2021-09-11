@@ -88,7 +88,7 @@ class SetupApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
         self.frames = self.load_frames(container)
-        self.show_frame('StartStopOptions')
+        self.show_frame('WelcomePage')
 
     def load_frames(self, container):
         """Loop through the frames defined in this module, create them and add
@@ -105,7 +105,7 @@ class SetupApp(tk.Tk):
         #          ObsAlertSources, LaunchTwitch, SetupComplete,
         #          StartStopOptions):
         for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
-                  ObsAlertSources, LaunchTwitch, StartStopOptions):
+                  ObsAlertSources):
             page_name = f.__name__
             frame = f(container, self, name=page_name.lower())
             frame.grid(row=0, column=0, sticky='nsew')
@@ -261,7 +261,7 @@ class SetupPage(tk.Frame):
         for item in items:
             list_b.insert('end', item)
 
-    def setup_list_frame(self, header='', select_mode='single'):
+    def setup_list_frame(self, header='', name='', select_mode='single'):
         """Create a frame for a list box with a scroll bar to be added to the
         top frame. Weighting of the outer grid sections is not completed in
         this function, and should be completed after the other components have
@@ -269,13 +269,15 @@ class SetupPage(tk.Frame):
 
         :param header: Header text for the frame
         :type header: str
+        :param name: The name to give to the listbox
+        :type name: str
         :param select_mode: Value for select_mode for the Listbox widget
         :type select_mode: str
-        :return: The frame and listbox for further interaction
-        :rtype: (tk.Frame, tk.Listbox)
+        :return: The frame
+        :rtype: tk.Frame
         """
-        frame = tk.Frame(self.middle_frame)
-        list_box = tk.Listbox(frame, selectmode=select_mode)
+        frame = tk.Frame(self.middle_frame, name=f"{name}_frame")
+        list_box = tk.Listbox(frame, selectmode=select_mode, name=f"{name}_lbx")
         row_start = 0
         if header:
             row_start = 1
@@ -286,7 +288,12 @@ class SetupPage(tk.Frame):
         scroll.grid(row=row_start, column=1, sticky='ns')
         scroll.config(command=list_box.yview)
         list_box.config(yscrollcommand=scroll.set)
-        return frame, list_box
+        return frame
+
+    def get_list_frame_lbx(self, name, target_frame='middle_frame'):
+        screen_name = str(self)
+        lbx_path = f"{screen_name}.{target_frame}.{name}_frame.{name}_lbx"
+        return self.controller.nametowidget(lbx_path)
 
     def enable_disable_widgets(self, test, widgets,
                                target_frame='middle_frame'):
@@ -456,14 +463,14 @@ class ObsAudioSources(SetupPage):
         self.desktop_source = tk.StringVar()
         super().__init__(parent, controller, name, headers, footers)
         self.mic_source.set(self.load_mic_source())
-        self.desktop_source.set(self.load_desktop_source())
+        self.obs_sources = self.get_list_frame_lbx('obs_sources')
         
     def _layout_frames(self):
         super()._layout_frames()
         # todo: see if I can split out the below, perhaps by using unique
         #  names for the frames
-        listbox_frame, self.obs_sources = self.setup_list_frame(
-            ti.OBSALERT_SOURCE_PROMPT)
+        listbox_frame = self.setup_list_frame(ti.OBSALERT_SOURCE_PROMPT,
+                                              'obs_sources')
         listbox_frame.grid(row=0, column=0, rowspan=6, padx=5, sticky='ne')
         mic_source_btn = tk.Button(self.middle_frame, text=' <<  >> ',
                                    command=self.select_mic_source)
@@ -566,14 +573,16 @@ class ObsAlertSources(SetupPage):
         footers = (self.update_sources, 
                    lambda: self.controller.show_frame('ObsAudioSources'))
         super().__init__(parent, controller, name, headers, footers)
+        self.obs_sources = self.get_list_frame_lbx('obs_sources')
+        self.alert_sources = self.get_list_frame_lbx('alert_sources')
         # Load the default alert sources after the layout since we're adding
         # directly to the listbox
         self.load_default_alert_sources()
 
     def _layout_frames(self):
         super()._layout_frames()
-        obs_frame, self.obs_sources = self.setup_list_frame(
-            ti.OBSALERT_SOURCE_PROMPT, 'extended')
+        obs_frame = self.setup_list_frame(ti.OBSALERT_SOURCE_PROMPT,
+                                          'obs_sources', 'extended')
         obs_frame.grid(row=1, column=0, padx=5, rowspan=5, sticky='e')
         add_source_button = tk.Button(self.middle_frame, text=' >> ',
                                       command=self.select_alert_source)
@@ -581,8 +590,8 @@ class ObsAlertSources(SetupPage):
         remove_source_button = tk.Button(self.middle_frame, text=' << ',
                                          command=self.remove_alert_source)
         remove_source_button.grid(row=4, column=1, padx=10)
-        alert_frame, self.alert_sources = self.setup_list_frame(
-            ti.OBSALERT_ALERT_PROMPT, 'extended')
+        alert_frame = self.setup_list_frame(ti.OBSALERT_ALERT_PROMPT,
+                                            'alert_sources', 'extended')
         alert_frame.grid(row=1, column=2, padx=5, rowspan=5, sticky='w')
         # Prefer the bottom row to force everything up and the right hand
         # column to force everything left
@@ -654,9 +663,7 @@ class LaunchTwitch(SetupPage):
         them to the Twitch OAuth page.  Start a web server to listen for the
         response"""
         # Disable my next button
-        next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
-        self.controller.nametowidget(next_button_path)['state'] = 'disabled'
-
+        self.enable_disable_widgets(False, ('next', ), 'bottom_frame')
         base_url = 'https://id.twitch.tv/oauth2/authorize'
         params = {'client_id': CLIENT_ID, 'redirect_uri': REDIRECT_URI,
                   'response_type': 'token',
