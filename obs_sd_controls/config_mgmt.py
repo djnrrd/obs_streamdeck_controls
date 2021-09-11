@@ -896,11 +896,11 @@ class SafetyOptions(SetupPage):
         None if config.has_section(section_name) else \
             config.add_section(section_name)
         if config.has_option(section_name, 'enabled'):
-            self.safety_check_value.set(bool(config[section_name]['enabled']))
+            self.safety_check_value.set(eval(config[section_name]['enabled']))
             self.safety_option.set(config[section_name]['method'])
             if self.safety_option.get() == 'FOLLOWER':
                 self.follow_time.set(config[section_name]['follow_time'])
-            self.emote_option.set(bool(config[section_name]['emote_mode']))
+            self.emote_option.set(eval(config[section_name]['emote_mode']))
             self.safety_check_changed()
             self.safety_radio_change()
 
@@ -998,6 +998,7 @@ class AdditionalPanicOptions(SetupPage):
         self.ad_check_value = tk.BooleanVar()
         self.marker_check_value = tk.BooleanVar()
         super().__init__(parent, controller, name, headers, footers)
+        self.load_additional()
 
     def _layout_frames(self):
         """Layout the additional options form"""
@@ -1023,6 +1024,16 @@ class AdditionalPanicOptions(SetupPage):
         config['additional']['advert'] = str(self.ad_check_value.get())
         config['additional']['marker'] = str(self.marker_check_value.get())
         self.controller.show_frame('SetupComplete')
+
+    def load_additional(self):
+        """If there are additional safety options update the form with those
+        values
+        """
+        config = self.controller.obs_config
+        None if config.has_section('additional') else \
+            config.add_section('additional')
+        self.ad_check_value.set(eval(config['additional']['advert']))
+        self.marker_check_value.set(eval(config['additional']['marker']))
 
 
 class SetupComplete(SetupPage):
