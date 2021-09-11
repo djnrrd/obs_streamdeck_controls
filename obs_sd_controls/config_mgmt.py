@@ -877,8 +877,6 @@ class SafetyOptions(SetupPage):
         :type next_frame: str
         """
         config = self.controller.obs_config
-        None if config.has_section(section_name) else \
-            config.add_section(section_name)
         config[section_name]['enabled'] = str(self.safety_check_value.get())
         if self.safety_check_value.get():
             config[section_name]['method'] = self.safety_option.get()
@@ -886,6 +884,25 @@ class SafetyOptions(SetupPage):
                 config[section_name]['follow_time'] = self.follow_time.get()
             config[section_name]['emote_mode'] = str(self.emote_option.get())
         self.controller.show_frame(next_frame)
+
+    def load_safety(self, section_name):
+        """If there are existing safety options, update the form to reflect
+        them
+
+        :param section_name:
+        :type section_name: str
+        """
+        config = self.controller.obs_config
+        None if config.has_section(section_name) else \
+            config.add_section(section_name)
+        if config.has_option(section_name, 'enabled'):
+            self.safety_check_value.set(bool(config[section_name]['enabled']))
+            self.safety_option.set(config[section_name]['method'])
+            if self.safety_option.get() == 'FOLLOWER':
+                self.follow_time.set(config[section_name]['follow_time'])
+            self.emote_option.set(bool(config[section_name]['emote_mode']))
+            self.safety_check_changed()
+            self.safety_radio_change()
 
 
 class StartStopOptions(SafetyOptions):
@@ -911,6 +928,7 @@ class StartStopOptions(SafetyOptions):
         footers = (self.update_safety,
                    lambda: self.controller.show_frame('LaunchTwitch'))
         super().__init__(parent, controller, name, headers, footers)
+        self.load_safety('start_stop_safety')
 
     def _layout_frames(self):
         """Layout the safety options for the Start/Stop function
@@ -946,6 +964,7 @@ class PanicButtonOptions(SafetyOptions):
         footers = (self.update_safety,
                    lambda: self.controller.show_frame('StartStopOptions'))
         super().__init__(parent, controller, name, headers, footers)
+        self.load_safety('panic_button_safety')
 
     def _layout_frames(self):
         """Layout the safety options for the Panic Button function"""
