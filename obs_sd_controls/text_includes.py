@@ -23,14 +23,15 @@ OBSWSPASS_WARN = """Unable to connect to OBS WebSockets.  Please make sure that:
 3) The password and port number are correct"""
 
 OBSAUDIO_HEADING = 'Select OBS Audio Sources'
-OBSAUDIO_TEXT = 'Please select your Microphone and Desktop Audio sources'
+OBSAUDIO_TEXT = 'Please select your Microphone and Desktop Audio sources. ' \
+                'These will be used for the Mute functions'
 OBSAUDIO_MIC_PROMPT = 'Microphone Source'
 OBSAUDIO_DESK_PROMPT = 'Desktop Audio Source'
 
 OBSALERT_HEADING = 'Select OBS Notification and Chat Sources'
 OBSALERT_TEXT = 'Please select the browser sources used for notifications ' \
-                'and/or chat that you wish to disable should you press the ' \
-                '"Panic Button"'
+                'and/or chat that you wish to disable when using the ' \
+                '"Panic Button" function'
 OBSALERT_SOURCE_PROMPT = 'OBS Sources'
 OBSALERT_ALERT_PROMPT = 'Notification/Chat Sources'
 
