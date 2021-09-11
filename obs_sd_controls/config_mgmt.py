@@ -284,9 +284,14 @@ class WelcomePage(SetupPage):
     def __init__(self, parent, controller, name=''):
         super().__init__(parent, controller, name=name)
         self.setup_header(ti.WELCOME_HEADING, ti.WELCOME_TEXT)
+        obsws_btn = tk.Button(self.top_frame, text='Get OBS WebSockets',
+                               command=self.get_obsws, name='obsws',
+                               state='normal')
+        obsws_btn.grid(row=2, column=0, sticky='nw', padx=10)
         # Favour the body of the text over the header
         self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=1)
+        self.top_frame.grid_rowconfigure(1, weight=0)
+        self.top_frame.grid_rowconfigure(2, weight=1)
         self.top_frame.grid_columnconfigure(0, weight=1)
         self.setup_navigation(self.check_existing)
 
@@ -300,6 +305,11 @@ class WelcomePage(SetupPage):
             self.controller.show_frame('ExistingConfig')
         else:
             self.controller.show_frame('ObsWsPass')
+
+    @staticmethod
+    def get_obsws():
+        webbrowser.open_new_tab('https://github.com/Palakis/obs-websocket/'
+                                'releases/tag/4.9.1')
 
 
 class ExistingConfig(SetupPage):

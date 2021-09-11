@@ -1,7 +1,11 @@
 APP_HEADER = 'OBS Streamdeck Control Setup Wizard'
 
 WELCOME_HEADING = 'OBS Streamdeck Control Setup'
-WELCOME_TEXT = 'Welcome to the setup wizard for OBS Streamdeck Controls.'
+WELCOME_TEXT = 'Welcome to the setup wizard for OBS Streamdeck Controls. ' \
+               'These controls are designed for use with OBS Studio and the ' \
+               'OBS WebSockets server plugin. Please make sure that you have ' \
+               'the OBS WebSockets server plugin installed, and that OBS is ' \
+               'running.'
 
 EXISTING_HEADING = 'Existing Configuration Warning'
 EXISTING_TEXT = 'OBS Streamdeck Control already has a config file. Press Next ' \
