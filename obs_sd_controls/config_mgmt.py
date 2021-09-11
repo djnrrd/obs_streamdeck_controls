@@ -63,7 +63,7 @@ class SetupApp(tk.Tk):
 
     :param config: The ConfigParser object that was loaded from
         config_mgmt.load_config
-    :type config
+    :type config: ConfigParser
     :cvar obs_config: The stored ConfigParser object
     """
     def __init__(self, config):
@@ -132,8 +132,8 @@ class SetupApp(tk.Tk):
 
 class SetupPage(tk.Frame):
     """A superclass frame that should not be called directly, but instead
-    creates the split between the main wizard section at the top and the
-    navigation buttons below.
+    manages the split between the main wizard, the header, and the navigation
+    sections below.
 
     :param parent: The parent frame to attach this frame to
     :type parent: tk.Frame
@@ -148,10 +148,6 @@ class SetupPage(tk.Frame):
     :cvar top_frame: The header frame
     :cvar middle_frame: The main frame for the wizard pages
     :cvar bottom_frame: The navigation frame
-    :cvar safety_check_value: A Tkinter BooleanVar for safety pages
-    :cvar emote_option: A Tkinter BooleanVar for safety pages
-    :cvar safety_option: A Tkinter StringVar for safety pages
-    :cvar follow_time: A Tkinter StringVar for safety pages
     """
 
     def __init__(self, parent, controller, name='', headers=(), footers=()):
@@ -334,80 +330,6 @@ class SetupPage(tk.Frame):
             next_button_path = f"{screen_name}.{target_frame}.{name}"
             self.controller.nametowidget(next_button_path)['state'] = state
 
-    def chat_safety_options(self, check_text):
-        """Render the safety options. This has been moved up to the parent
-        class as 2 setup pages will require it
-
-        :param check_text: the text to render next to the enable check button
-        :type check_text: str
-        """
-        safety_chk = tk.Checkbutton(self.middle_frame,
-                                    text=check_text,
-                                    command=self.safety_check_changed,
-                                    variable=self.safety_check_value)
-        safety_chk.grid(row=1, column=0, sticky='nw', padx=10)
-        emote_chk = tk.Checkbutton(self.middle_frame, text=ti.SAFETY_EMOTE,
-                                   variable=self.emote_option,
-                                   state='disabled', name='emote_chk')
-        follower_rdo = tk.Radiobutton(self.middle_frame,
-                                      text=ti.SAFETY_FOLLOW,
-                                      variable=self.safety_option,
-                                      value='FOLLOWER', state='disabled',
-                                      name='follower_rdo',
-                                      command=self.safety_radio_change)
-        follow_time_ety = tk.Entry(self.middle_frame,
-                                   textvariable=self.follow_time,
-                                   state='disabled', name='follow_time_ety')
-        follow_time_lbl = tk.Label(self.middle_frame,
-                                   text=ti.SAFETY_FOLLOW_TIME,
-                                   name='follow_time_lbl', state='disabled')
-        sub_rdo = tk.Radiobutton(self.middle_frame, text=ti.SAFETY_SUB,
-                                 variable=self.safety_option,
-                                 value='SUBSCRIBER', state='disabled',
-                                 name='sub_rdo',
-                                 command=self.safety_radio_change)
-        follower_rdo.grid(row=2, column=0, sticky='nw', padx=10)
-        follow_time_ety.grid(row=2, column=1, sticky='nw', padx=10)
-        follow_time_lbl.grid(row=3, column=1, sticky='nw', padx=10)
-        sub_rdo.grid(row=3, column=0, sticky='nw', padx=10)
-        emote_chk.grid(row=4, column=0, sticky='nw', padx=10)
-        self.middle_frame.grid_rowconfigure(0, weight=0)
-        self.middle_frame.grid_rowconfigure(1, weight=0)
-        self.middle_frame.grid_rowconfigure(2, weight=0)
-        self.middle_frame.grid_rowconfigure(3, weight=0)
-        self.middle_frame.grid_rowconfigure(4, weight=0)
-        self.middle_frame.grid_columnconfigure(0, weight=1)
-        self.middle_frame.grid_columnconfigure(1, weight=0)
-
-    def safety_check_changed(self):
-        self.enable_disable_widgets(self.safety_check_value.get(),
-                                    ('emote_chk', 'follower_rdo', 'sub_rdo'))
-
-    def safety_radio_change(self):
-        self.enable_disable_widgets(self.safety_option.get() == 'FOLLOWER',
-                                    ('follow_time_ety', 'follow_time_lbl'))
-
-    def update_safety(self, section_name, next_frame):
-        """Get the updated value from the entry box and update the config.
-        Before showing the next frame, load the sources from OBS
-
-        :param section_name: The name for the config section
-        :type section_name: str
-        :param next_frame: The name of the next frame to load after updating
-            the config
-        :type next_frame: str
-        """
-        config = self.controller.obs_config
-        None if config.has_section(section_name) else \
-            config.add_section(section_name)
-        config[section_name]['enabled'] = str(self.safety_check_value.get())
-        if self.safety_check_value.get():
-            config[section_name]['method'] = self.safety_option.get()
-            if self.safety_option.get() == 'FOLLOWER':
-                config[section_name]['follow_time'] = self.follow_time.get()
-            config[section_name]['emote_mode'] = str(self.emote_option.get())
-        self.controller.show_frame(next_frame)
-
 
 class WelcomePage(SetupPage):
     """Introduction page for the Setup Wizard
@@ -416,6 +338,12 @@ class WelcomePage(SetupPage):
     :type parent: tk.Frame
     :param controller: The main application GUI
     :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
     """
 
     def __init__(self, parent, controller, name=''):
@@ -457,6 +385,12 @@ class ExistingConfig(SetupPage):
     :type parent: tk.Frame
     :param controller: The main application GUI
     :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
     """
     def __init__(self, parent, controller, name=''):
         headers = (ti.EXISTING_HEADING, ti.EXISTING_TEXT)
@@ -472,6 +406,12 @@ class ObsWsPass(SetupPage):
     :type parent: tk.Frame
     :param controller: The main application GUI
     :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
     """
     def __init__(self, parent, controller, name=''):
         headers = (ti.OBSWSPASS_HEADING, ti.OBSWSPASS_TEXT)
@@ -544,6 +484,12 @@ class ObsAudioSources(SetupPage):
     :type parent: tk.Frame
     :param controller: The main application GUI
     :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
     """
 
     def __init__(self, parent, controller, name=''):
@@ -658,6 +604,12 @@ class ObsAlertSources(SetupPage):
     :type parent: tk.Frame
     :param controller: The main application GUI
     :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
     """
 
     def __init__(self, parent, controller, name=''):
@@ -742,6 +694,12 @@ class LaunchTwitch(SetupPage):
     :type parent: tk.Frame
     :param controller: The main application GUI
     :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
     """
 
     def __init__(self, parent, controller, name=''):
@@ -806,8 +764,122 @@ class LaunchTwitch(SetupPage):
         self.controller.show_frame('StartStopOptions')
 
 
-class StartStopOptions(SetupPage):
+class SafetyOptions(SetupPage):
+    """Create an intermediary class, since the next two setup pages are
+    essentially the same
 
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
+    :cvar safety_check_value: A Tkinter BooleanVar for safety pages
+    :cvar emote_option: A Tkinter BooleanVar for safety pages
+    :cvar safety_option: A Tkinter StringVar for safety pages
+    :cvar follow_time: A Tkinter StringVar for safety pages
+    """
+    def _layout_frames(self, check_text):
+        super()._layout_frames()
+        self.chat_safety_options(check_text)
+
+    def chat_safety_options(self, check_text):
+        """Render the safety options. This has been moved up to the parent
+        class as 2 setup pages will require it
+
+        :param check_text: the text to render next to the enable check button
+        :type check_text: str
+        """
+        safety_chk = tk.Checkbutton(self.middle_frame,
+                                    text=check_text,
+                                    command=self.safety_check_changed,
+                                    variable=self.safety_check_value)
+        safety_chk.grid(row=1, column=0, sticky='nw', padx=10)
+        emote_chk = tk.Checkbutton(self.middle_frame, text=ti.SAFETY_EMOTE,
+                                   variable=self.emote_option,
+                                   state='disabled', name='emote_chk')
+        follower_rdo = tk.Radiobutton(self.middle_frame,
+                                      text=ti.SAFETY_FOLLOW,
+                                      variable=self.safety_option,
+                                      value='FOLLOWER', state='disabled',
+                                      name='follower_rdo',
+                                      command=self.safety_radio_change)
+        follow_time_ety = tk.Entry(self.middle_frame,
+                                   textvariable=self.follow_time,
+                                   state='disabled', name='follow_time_ety')
+        follow_time_lbl = tk.Label(self.middle_frame,
+                                   text=ti.SAFETY_FOLLOW_TIME,
+                                   name='follow_time_lbl', state='disabled')
+        sub_rdo = tk.Radiobutton(self.middle_frame, text=ti.SAFETY_SUB,
+                                 variable=self.safety_option,
+                                 value='SUBSCRIBER', state='disabled',
+                                 name='sub_rdo',
+                                 command=self.safety_radio_change)
+        follower_rdo.grid(row=2, column=0, sticky='nw', padx=10)
+        follow_time_ety.grid(row=2, column=1, sticky='nw', padx=10)
+        follow_time_lbl.grid(row=3, column=1, sticky='nw', padx=10)
+        sub_rdo.grid(row=3, column=0, sticky='nw', padx=10)
+        emote_chk.grid(row=4, column=0, sticky='nw', padx=10)
+        self.middle_frame.grid_rowconfigure(0, weight=0)
+        self.middle_frame.grid_rowconfigure(1, weight=0)
+        self.middle_frame.grid_rowconfigure(2, weight=0)
+        self.middle_frame.grid_rowconfigure(3, weight=0)
+        self.middle_frame.grid_rowconfigure(4, weight=0)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(1, weight=0)
+
+    def safety_check_changed(self):
+        self.enable_disable_widgets(self.safety_check_value.get(),
+                                    ('emote_chk', 'follower_rdo', 'sub_rdo'))
+
+    def safety_radio_change(self):
+        self.enable_disable_widgets(self.safety_option.get() == 'FOLLOWER',
+                                    ('follow_time_ety', 'follow_time_lbl'))
+
+    def update_safety(self, section_name, next_frame):
+        """Get the updated value from the entry box and update the config.
+        Before showing the next frame, load the sources from OBS
+
+        :param section_name: The name for the config section
+        :type section_name: str
+        :param next_frame: The name of the next frame to load after updating
+            the config
+        :type next_frame: str
+        """
+        config = self.controller.obs_config
+        None if config.has_section(section_name) else \
+            config.add_section(section_name)
+        config[section_name]['enabled'] = str(self.safety_check_value.get())
+        if self.safety_check_value.get():
+            config[section_name]['method'] = self.safety_option.get()
+            if self.safety_option.get() == 'FOLLOWER':
+                config[section_name]['follow_time'] = self.follow_time.get()
+            config[section_name]['emote_mode'] = str(self.emote_option.get())
+        self.controller.show_frame(next_frame)
+
+
+class StartStopOptions(SafetyOptions):
+    """A Page to select the Start/Stop safety options.
+
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
+    :cvar safety_check_value: A Tkinter BooleanVar for safety pages
+    :cvar emote_option: A Tkinter BooleanVar for safety pages
+    :cvar safety_option: A Tkinter StringVar for safety pages
+    :cvar follow_time: A Tkinter StringVar for safety pages
+    """
     def __init__(self, parent, controller, name=''):
         headers = (ti.START_STOP_HEADING, ti.START_STOP_TEXT)
         footers = (self.update_safety,
@@ -815,15 +887,30 @@ class StartStopOptions(SetupPage):
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
-        super()._layout_frames()
-        self.chat_safety_options(ti.START_STOP_CHECK)
+        super()._layout_frames(ti.START_STOP_CHECK)
 
     def update_safety(self):
         super().update_safety('start_stop_safety', 'PanicButtonOptions')
 
 
-class PanicButtonOptions(SetupPage):
+class PanicButtonOptions(SafetyOptions):
+    """A Page to select the Panic Button safety options.
 
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
+    :cvar safety_check_value: A Tkinter BooleanVar for safety pages
+    :cvar emote_option: A Tkinter BooleanVar for safety pages
+    :cvar safety_option: A Tkinter StringVar for safety pages
+    :cvar follow_time: A Tkinter StringVar for safety pages
+    """
     def __init__(self, parent, controller, name=''):
         headers = (ti.PANIC_BUTTON_HEADING, ti.PANIC_BUTTON_TEXT)
         footers = (self.update_safety,
@@ -831,15 +918,43 @@ class PanicButtonOptions(SetupPage):
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
-        super()._layout_frames()
-        self.chat_safety_options(ti.START_STOP_CHECK)
+        super()._layout_frames(ti.PANIC_BUTTON_CHECK)
 
     def update_safety(self):
         super().update_safety('panic_button_safety', 'SetupComplete')
 
 
-class SetupComplete(SetupPage):
+class AdditionalPanicOptions(SetupPage):
+    """A Page to collect additional options for the Panic Button function.
 
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
+    """
+    pass
+
+
+class SetupComplete(SetupPage):
+    """The final page of the setup wizard..
+
+    :param parent: The parent frame to attach this frame to
+    :type parent: tk.Frame
+    :param controller: The main application GUI
+    :type controller: tk.Tk
+    :param name: The name for the frame widget
+    :type name: str
+    :cvar controller: The main application GUI
+    :cvar top_frame: The header frame
+    :cvar middle_frame: The main frame for the wizard pages
+    :cvar bottom_frame: The navigation frame
+    """
     def __init__(self, parent, controller, name=''):
         headers = (ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
         footers = (self.complete,

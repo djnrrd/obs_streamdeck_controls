@@ -48,7 +48,7 @@ START_STOP_CHECK = 'Enable Start/Stop safety feature?'
 PANIC_BUTTON_HEADING = 'Panic Button Safety Features'
 PANIC_BUTTON_TEXT = 'The Panic Button function can be used to lock down your ' \
                     'chat'
-
+PANIC_BUTTON_CHECK = 'Enable Panic Button safety feature?'
 
 SAFETY_EMOTE = 'Enable emote only mode additionally'
 SAFETY_FOLLOW = 'Follower only mode'
