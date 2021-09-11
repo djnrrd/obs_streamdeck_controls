@@ -103,7 +103,7 @@ class SetupApp(tk.Tk):
         ret_dict = dict()
         for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
                   ObsAlertSources, LaunchTwitch, StartStopOptions,
-                  PanicButtonOptions, SetupComplete):
+                  PanicButtonOptions, AdditionalPanicOptions, SetupComplete):
             page_name = f.__name__
             frame = f(container, self, name=page_name.lower())
             frame.grid(row=0, column=0, sticky='nsew')
@@ -783,17 +783,15 @@ class SafetyOptions(SetupPage):
     :cvar safety_option: A Tkinter StringVar for safety pages
     :cvar follow_time: A Tkinter StringVar for safety pages
     """
-    def _layout_frames(self, check_text):
-        super()._layout_frames()
-        self.chat_safety_options(check_text)
 
-    def chat_safety_options(self, check_text):
+    def _layout_frames(self, check_text):
         """Render the safety options. This has been moved up to the parent
         class as 2 setup pages will require it
 
         :param check_text: the text to render next to the enable check button
         :type check_text: str
         """
+        super()._layout_frames()
         safety_chk = tk.Checkbutton(self.middle_frame,
                                     text=check_text,
                                     command=self.safety_check_changed,
@@ -921,7 +919,7 @@ class PanicButtonOptions(SafetyOptions):
         super()._layout_frames(ti.PANIC_BUTTON_CHECK)
 
     def update_safety(self):
-        super().update_safety('panic_button_safety', 'SetupComplete')
+        super().update_safety('panic_button_safety', 'AdditionalPanicOptions')
 
 
 class AdditionalPanicOptions(SetupPage):
@@ -938,7 +936,36 @@ class AdditionalPanicOptions(SetupPage):
     :cvar middle_frame: The main frame for the wizard pages
     :cvar bottom_frame: The navigation frame
     """
-    pass
+
+    def __init__(self, parent, controller, name=''):
+        headers = (ti.ADDITIONAL_HEADING, ti.ADDITIONAL_TEXT)
+        footers = (self.update_additional,
+                   lambda: self.controller.show_frame('PanicButtonOptions'))
+        self.ad_check_value = tk.BooleanVar()
+        self.marker_check_value = tk.BooleanVar()
+        super().__init__(parent, controller, name, headers, footers)
+
+    def _layout_frames(self):
+        super()._layout_frames()
+        ad_chk = tk.Checkbutton(self.middle_frame,
+                                text=ti.ADDITIONAL_AD_CHECK,
+                                variable=self.ad_check_value)
+        marker_chk = tk.Checkbutton(self.middle_frame,
+                                    text=ti.ADDITIONAL_MARKER_CHECK,
+                                    variable=self.marker_check_value)
+        ad_chk.grid(row=0, column=0, sticky='nw', padx=10)
+        marker_chk.grid(row=1, column=0, sticky='nw', padx=10)
+        self.middle_frame.grid_rowconfigure(0, weight=0)
+        self.middle_frame.grid_rowconfigure(1, weight=0)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+
+    def update_additional(self):
+        config = self.controller.obs_config
+        None if config.has_section('additional') else \
+            config.add_section('additional')
+        config['additional']['advert'] = str(self.ad_check_value.get())
+        config['additional']['marker'] = str(self.marker_check_value.get())
+        self.controller.show_frame('SetupComplete')
 
 
 class SetupComplete(SetupPage):

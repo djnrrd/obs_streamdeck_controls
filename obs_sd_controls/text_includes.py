@@ -50,6 +50,13 @@ PANIC_BUTTON_TEXT = 'The Panic Button function can be used to lock down your ' \
                     'chat'
 PANIC_BUTTON_CHECK = 'Enable Panic Button safety feature?'
 
+
+ADDITIONAL_HEADING = 'Additional Panic Button Safety Features'
+ADDITIONAL_TEXT = 'The Panic Button function may also do the following:'
+ADDITIONAL_AD_CHECK = 'Play an advert'
+ADDITIONAL_MARKER_CHECK = 'Add a stream marker'
+
+
 SAFETY_EMOTE = 'Enable emote only mode additionally'
 SAFETY_FOLLOW = 'Follower only mode'
 SAFETY_FOLLOW_TIME = 'Follow duration before allowing chat (Examples ' \
