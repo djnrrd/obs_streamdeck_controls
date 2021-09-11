@@ -170,9 +170,9 @@ class SetupPage(tk.Frame):
     def _layout_frames(self):
         """Create the main 3 layout frames and grid them.
         """
-        self.top_frame = tk.Frame(self, name='top_frame', bg='red')
-        self.middle_frame = tk.Frame(self, name='middle_frame', bg='blue')
-        self.bottom_frame = tk.Frame(self, name='bottom_frame', bg='green')
+        self.top_frame = tk.Frame(self, name='top_frame')
+        self.middle_frame = tk.Frame(self, name='middle_frame')
+        self.bottom_frame = tk.Frame(self, name='bottom_frame')
         self.top_frame.grid(row=0, column=0, sticky='nsew')
         self.middle_frame.grid(row=1, column=0, sticky='nsew')
         # Add some padding to make the navigation buttons stand out
