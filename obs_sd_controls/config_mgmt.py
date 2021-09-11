@@ -73,6 +73,7 @@ class SetupApp(tk.Tk):
     :type config: ConfigParser
     :cvar obs_config: The stored ConfigParser object
     """
+
     def __init__(self, config):
         super().__init__()
         # Add the config to the application, we'll be calling it from some of
@@ -95,7 +96,7 @@ class SetupApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
         self.frames = self.load_frames(container)
-        self.show_frame('StartStopOptions')
+        self.show_frame('WelcomePage')
 
     def load_frames(self, container):
         """Loop through the frames defined in this module, create them and add
