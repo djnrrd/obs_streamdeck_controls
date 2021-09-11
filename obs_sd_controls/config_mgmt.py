@@ -87,7 +87,7 @@ class SetupApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
         self.frames = self.load_frames(container)
-        self.show_frame('StartStopOptions')
+        self.show_frame('WelcomePage')
 
     def load_frames(self, container):
         """Loop through the frames defined in this module, create them and add
@@ -100,9 +100,10 @@ class SetupApp(tk.Tk):
         :rtype: dict
         """
         ret_dict = dict()
-        for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
-                  ObsAlertSources, LaunchTwitch, SetupComplete,
-                  StartStopOptions):
+        #for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
+        #          ObsAlertSources, LaunchTwitch, SetupComplete,
+        #          StartStopOptions):
+        for f in (WelcomePage, ExistingConfig, ObsWsPass):
             page_name = f.__name__
             frame = f(container, self, name=page_name.lower())
             frame.grid(row=0, column=0, sticky='nsew')
@@ -138,25 +139,39 @@ class SetupPage(tk.Frame):
     :type parent: tk.Frame
     :param controller: The main application GUI
     :type controller: tk.Tk
+    :param name: The name to refer to this frame
+    :type name: str
+    :param headers: A pair of text strings in a tuple (HEADING,
+        HEADING_TEXT), to provide to the top frame
+    :type headers: tuple
     :cvar controller: The main application GUI
     :cvar top_frame: The main frame for the wizard pages
     :cvar bottom_frame: The navigation frame
     """
 
-    def __init__(self, parent, controller, name=''):
+    def __init__(self, parent, controller, name='', headers=(), footers=()):
         super().__init__(parent, name=name)
         self.controller = controller
-        # Create 2 frames The top one is for the actual config bits and the
-        # lower one for navigation
-        self.top_frame = tk.Frame(self, name='top_frame')
-        self.bottom_frame = tk.Frame(self, name='bottom_frame')
-        # Favour the top row, so the bottom row is only as big as it needs to
-        # be with a little padding
+        self._layout_frames()
+        self.setup_header(*headers)
+        self.setup_navigation(*footers)
+
+    def _layout_frames(self):
+        """Create the main 3 layout frames and grid them.
+        """
+        self.top_frame = tk.Frame(self, name='top_frame', bg='red')
+        self.middle_frame = tk.Frame(self, name='middle_frame', bg='blue')
+        self.bottom_frame = tk.Frame(self, name='bottom_frame', bg='green')
         self.top_frame.grid(row=0, column=0, sticky='nsew')
-        self.bottom_frame.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
-        self.grid_rowconfigure(0, weight=1)
+        self.middle_frame.grid(row=1, column=0, sticky='nsew')
+        # Add some padding to make the navigation buttons stand out
+        self.bottom_frame.grid(row=2, column=0, sticky='nsew', padx=10, pady=10)
+        # Favour the middle row, so the bottom and top rows are only as big as
+        # they need to be.
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=0)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=0)
 
     def setup_navigation(self, next_function, back_function=None, final=False):
         """ Setup the navigation buttons in the bottom frame
@@ -193,9 +208,7 @@ class SetupPage(tk.Frame):
             self.bottom_frame.grid_columnconfigure(2, weight=0)
 
     def setup_header(self, header_text, body_text, col_span=1):
-        """Setup the heading section in the top frame. Weighting of the grid
-        sections is not completed in this function, and should be completed
-        after the other components have been laid out
+        """Setup the heading section in the top frame.
 
         :param header_text: The text to render as the header for the frame
         :type header_text: str
@@ -206,11 +219,13 @@ class SetupPage(tk.Frame):
         """
         heading = tk.Label(self.top_frame, text=header_text,
                            font=self.controller.title_font)
-        heading.grid(row=0, column=0, sticky='nsew', pady=10,
-                     columnspan=col_span)
         description = tk.Message(self.top_frame, text=body_text, width=780)
-        description.grid(row=1, column=0, sticky='nw', columnspan=col_span,
-                         pady=10, padx=5)
+        heading.grid(row=0, column=0, sticky='nsew', pady=10)
+        description.grid(row=1, column=0, sticky='nw', pady=10, padx=5)
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=1)
+        self.top_frame.grid_columnconfigure(0, weight=1)
+
 
     @staticmethod
     def list_to_entry(list_widget, entry_widget):
@@ -283,18 +298,18 @@ class WelcomePage(SetupPage):
     """
 
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        self.setup_header(ti.WELCOME_HEADING, ti.WELCOME_TEXT)
-        obsws_btn = tk.Button(self.top_frame, text='Get OBS WebSockets',
-                               command=self.get_obsws, name='obsws',
-                               state='normal')
-        obsws_btn.grid(row=2, column=0, sticky='nw', padx=10)
-        # Favour the body of the text over the header
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=0)
-        self.top_frame.grid_rowconfigure(2, weight=1)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.setup_navigation(self.check_existing)
+        headers = (ti.WELCOME_HEADING, ti.WELCOME_TEXT)
+        footers = (self.check_existing, )
+        super().__init__(parent, controller, name, headers, footers)
+
+    def _layout_frames(self):
+        super()._layout_frames()
+        obsws_btn = tk.Button(self.middle_frame, text='Get OBS WebSockets',
+                              command=self.get_obsws, name='obsws_btn',
+                              state='normal')
+        obsws_btn.grid(row=0, column=0, sticky='nw', padx=10)
+        self.middle_frame.grid_rowconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
 
     def check_existing(self):
         """Check the controller to see if the loaded config file had valid
@@ -323,14 +338,10 @@ class ExistingConfig(SetupPage):
     :type controller: tk.Tk
     """
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        self.setup_header(ti.EXISTING_HEADING, ti.EXISTING_TEXT)
-        # Favour the body of the text over the header
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=1)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.setup_navigation(lambda: controller.show_frame('ObsWsPass'),
-                              lambda: controller.show_frame('WelcomePage'))
+        headers = (ti.EXISTING_HEADING, ti.EXISTING_TEXT)
+        footers = (lambda: controller.show_frame('ObsWsPass'),
+                   lambda: controller.show_frame('WelcomePage'))
+        super().__init__(parent, controller, name, headers, footers)
 
 
 class ObsWsPass(SetupPage):
@@ -342,27 +353,26 @@ class ObsWsPass(SetupPage):
     :type controller: tk.Tk
     """
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        # Set the password as a tk variable and load it from config if possible
+        headers = (ti.OBSWSPASS_HEADING, ti.OBSWSPASS_TEXT)
+        footers = (self.update_password,
+                   lambda: controller.show_frame('WelcomePage'))
+        # Set the variables before calling super, then manipulate them
+        # afterwards
         self.obsws_pass = tk.StringVar()
+        super().__init__(parent, controller, name, headers, footers)
         self.obsws_pass.set(self.load_password())
-        # Layout
-        self.setup_header(ti.OBSWSPASS_HEADING, ti.OBSWSPASS_TEXT, 2)
-        password_prompt = tk.Label(self.top_frame, text=ti.OBSWSPASS_PROMPT)
-        password_prompt.grid(row=2, column=0, sticky='e', padx=5)
-        obsws_pass_entry = tk.Entry(self.top_frame,
+
+    def _layout_frames(self):
+        super()._layout_frames()
+        password_prompt_lbl = tk.Label(self.middle_frame,
+                                       text=ti.OBSWSPASS_PROMPT)
+        obsws_pass_entry = tk.Entry(self.middle_frame,
                                     textvariable=self.obsws_pass)
-        obsws_pass_entry.grid(row=2, column=1, sticky='w')
-        # Prefer the bottom row to force everything up and give the columns
-        # equal weight (not zero as that ruins the padding in the header) to
-        # force everything centered
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=0)
-        self.top_frame.grid_rowconfigure(2, weight=1)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.top_frame.grid_columnconfigure(1, weight=1)
-        self.setup_navigation(self.update_password,
-                              lambda: controller.show_frame('WelcomePage'))
+        password_prompt_lbl.grid(row=0, column=0, sticky='e', padx=5)
+        obsws_pass_entry.grid(row=0, column=1, sticky='w')
+        self.middle_frame.grid_rowconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(1, weight=1)
 
     def load_password(self):
         """If there is an existing password, return that value.
