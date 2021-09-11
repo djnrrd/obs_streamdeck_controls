@@ -103,7 +103,8 @@ class SetupApp(tk.Tk):
         #for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
         #          ObsAlertSources, LaunchTwitch, SetupComplete,
         #          StartStopOptions):
-        for f in (WelcomePage, ExistingConfig, ObsWsPass):
+        for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
+                  ObsAlertSources, LaunchTwitch, StartStopOptions):
             page_name = f.__name__
             frame = f(container, self, name=page_name.lower())
             frame.grid(row=0, column=0, sticky='nsew')
@@ -153,8 +154,8 @@ class SetupPage(tk.Frame):
         super().__init__(parent, name=name)
         self.controller = controller
         self._layout_frames()
-        self.setup_header(*headers)
-        self.setup_navigation(*footers)
+        self._setup_header(*headers)
+        self._setup_footer(*footers)
 
     def _layout_frames(self):
         """Create the main 3 layout frames and grid them.
@@ -173,7 +174,7 @@ class SetupPage(tk.Frame):
         self.grid_rowconfigure(2, weight=0)
         self.grid_columnconfigure(0, weight=1)
 
-    def setup_navigation(self, next_function, back_function=None, final=False):
+    def _setup_footer(self, next_function, back_function=None, final=False):
         """ Setup the navigation buttons in the bottom frame
 
         :param next_function: The function to call when clicking the Next button
@@ -207,7 +208,7 @@ class SetupPage(tk.Frame):
         if back_function:
             self.bottom_frame.grid_columnconfigure(2, weight=0)
 
-    def setup_header(self, header_text, body_text, col_span=1):
+    def _setup_header(self, header_text, body_text):
         """Setup the heading section in the top frame.
 
         :param header_text: The text to render as the header for the frame
@@ -225,7 +226,6 @@ class SetupPage(tk.Frame):
         self.top_frame.grid_rowconfigure(0, weight=0)
         self.top_frame.grid_rowconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(0, weight=1)
-
 
     @staticmethod
     def list_to_entry(list_widget, entry_widget):
@@ -273,7 +273,7 @@ class SetupPage(tk.Frame):
         :return: The frame and listbox for further interaction
         :rtype: (tk.Frame, tk.Listbox)
         """
-        frame = tk.Frame(self.top_frame)
+        frame = tk.Frame(self.middle_frame)
         list_box = tk.Listbox(frame, selectmode=select_mode)
         row_start = 0
         if header:
@@ -426,49 +426,54 @@ class ObsAudioSources(SetupPage):
     """
 
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        # Set the sources as a tk variable and load them from config if possible
+        headers = (ti.OBSAUDIO_HEADING, ti.OBSAUDIO_TEXT)
+        footers = (self.update_sources, 
+                   lambda: self.controller.show_frame('ObsWsPass'))
+        # Set the variables before calling super, then manipulate them
+        # afterwards
         self.mic_source = tk.StringVar()
         self.desktop_source = tk.StringVar()
+        super().__init__(parent, controller, name, headers, footers)
         self.mic_source.set(self.load_mic_source())
         self.desktop_source.set(self.load_desktop_source())
-        # Layout
-        self.setup_header(ti.OBSAUDIO_HEADING, ti.OBSAUDIO_TEXT, 3)
+        
+    def _layout_frames(self):
+        super()._layout_frames()
+        # todo: see if I can split out the below, perhaps by using unique
+        #  names for the frames
         listbox_frame, self.obs_sources = self.setup_list_frame(
             ti.OBSALERT_SOURCE_PROMPT)
-        listbox_frame.grid(row=2, column=0, rowspan=6, padx=5, sticky='ne')
-        mic_source_button = tk.Button(self.top_frame, text=' <<  >> ',
-                                      command=self.select_mic_source)
-        mic_source_button.grid(row=3, column=1, padx=10, sticky='ew')
-        mic_source_label = tk.Label(self.top_frame, text=ti.OBSAUDIO_MIC_PROMPT)
-        mic_source_label.grid(row=2, column=2, sticky='sw')
-        mic_source_entry = tk.Entry(self.top_frame,
+        listbox_frame.grid(row=0, column=0, rowspan=6, padx=5, sticky='ne')
+        mic_source_btn = tk.Button(self.middle_frame, text=' <<  >> ',
+                                   command=self.select_mic_source)
+        mic_source_btn.grid(row=2, column=1, padx=10, sticky='ew')
+        mic_source_lbl = tk.Label(self.middle_frame,
+                                    text=ti.OBSAUDIO_MIC_PROMPT)
+        mic_source_lbl.grid(row=1, column=2, sticky='sw')
+        mic_source_entry = tk.Entry(self.middle_frame,
                                     textvariable=self.mic_source)
-        mic_source_entry.grid(row=3, column=2, sticky='w')
-        desktop_source_button = tk.Button(self.top_frame, text=' <<  >> ',
+        mic_source_entry.grid(row=2, column=2, sticky='w')
+        desktop_source_button = tk.Button(self.middle_frame, text=' <<  >> ',
                                           command=self.select_desktop_source)
-        desktop_source_button.grid(row=6, column=1, padx=10, sticky='ew')
-        desktop_source_label = tk.Label(self.top_frame,
+        desktop_source_button.grid(row=5, column=1, padx=10, sticky='ew')
+        desktop_source_label = tk.Label(self.middle_frame,
                                         text=ti.OBSAUDIO_DESK_PROMPT)
-        desktop_source_label.grid(row=5, column=2, sticky='sw')
-        desktop_source_entry = tk.Entry(self.top_frame,
+        desktop_source_label.grid(row=4, column=2, sticky='sw')
+        desktop_source_entry = tk.Entry(self.middle_frame,
                                         textvariable=self.desktop_source)
-        desktop_source_entry.grid(row=6, column=2, sticky='w')
+        desktop_source_entry.grid(row=5, column=2, sticky='w')
         # Prefer the bottom row to force everything up and the right hand
         # column to force everything left
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=0)
-        self.top_frame.grid_rowconfigure(2, weight=0)
-        self.top_frame.grid_rowconfigure(3, weight=0)
-        self.top_frame.grid_rowconfigure(4, weight=0)
-        self.top_frame.grid_rowconfigure(5, weight=0)
-        self.top_frame.grid_rowconfigure(6, weight=0)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.top_frame.grid_columnconfigure(1, weight=0)
-        self.top_frame.grid_columnconfigure(2, weight=1)
-        self.setup_navigation(self.update_sources, lambda:
-                              self.controller.show_frame('ObsWsPass'))
-
+        self.middle_frame.grid_rowconfigure(0, weight=0)
+        self.middle_frame.grid_rowconfigure(1, weight=0)
+        self.middle_frame.grid_rowconfigure(2, weight=0)
+        self.middle_frame.grid_rowconfigure(3, weight=0)
+        self.middle_frame.grid_rowconfigure(4, weight=0)
+        self.middle_frame.grid_rowconfigure(5, weight=0)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(1, weight=0)
+        self.middle_frame.grid_columnconfigure(2, weight=1)
+    
     def load_mic_source(self):
         """If there is an existing Mic source, return that value, otherwise
         return the default
@@ -536,39 +541,40 @@ class ObsAlertSources(SetupPage):
     """
 
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        self.setup_header(ti.OBSALERT_HEADING, ti.OBSALERT_TEXT, 3)
-        # Setup the first Frame and listbox
-        obs_frame, self.obs_sources = self.setup_list_frame(
-            ti.OBSALERT_SOURCE_PROMPT, 'extended')
-        obs_frame.grid(row=2, column=0, padx=5, rowspan=5, sticky='e')
-        add_source_button = tk.Button(self.top_frame, text=' >> ',
-                                      command=self.select_alert_source)
-        add_source_button.grid(row=3, column=1, padx=10)
-        remove_source_button = tk.Button(self.top_frame, text=' << ',
-                                         command=self.remove_alert_source)
-        remove_source_button.grid(row=5, column=1, padx=10)
-        alert_frame, self.alert_sources = self.setup_list_frame(
-            ti.OBSALERT_ALERT_PROMPT, 'extended')
-        alert_frame.grid(row=2, column=2, padx=5, rowspan=5, sticky='w')
-        # Prefer the bottom row to force everything up and the right hand
-        # column to force everything left
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=0)
-        self.top_frame.grid_rowconfigure(2, weight=0)
-        self.top_frame.grid_rowconfigure(3, weight=0)
-        self.top_frame.grid_rowconfigure(4, weight=0)
-        self.top_frame.grid_rowconfigure(5, weight=0)
-        self.top_frame.grid_rowconfigure(6, weight=0)
-        self.top_frame.grid_rowconfigure(7, weight=0)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.top_frame.grid_columnconfigure(1, weight=0)
-        self.top_frame.grid_columnconfigure(2, weight=1)
-        self.setup_navigation(self.update_sources, lambda:
-                              self.controller.show_frame('ObsAudioSources'))
+        headers = (ti.OBSALERT_HEADING, ti.OBSALERT_TEXT) 
+        footers = (self.update_sources, 
+                   lambda: self.controller.show_frame('ObsAudioSources'))
+        super().__init__(parent, controller, name, headers, footers)
         # Load the default alert sources after the layout since we're adding
         # directly to the listbox
         self.load_default_alert_sources()
+
+    def _layout_frames(self):
+        super()._layout_frames()
+        obs_frame, self.obs_sources = self.setup_list_frame(
+            ti.OBSALERT_SOURCE_PROMPT, 'extended')
+        obs_frame.grid(row=1, column=0, padx=5, rowspan=5, sticky='e')
+        add_source_button = tk.Button(self.middle_frame, text=' >> ',
+                                      command=self.select_alert_source)
+        add_source_button.grid(row=2, column=1, padx=10)
+        remove_source_button = tk.Button(self.middle_frame, text=' << ',
+                                         command=self.remove_alert_source)
+        remove_source_button.grid(row=4, column=1, padx=10)
+        alert_frame, self.alert_sources = self.setup_list_frame(
+            ti.OBSALERT_ALERT_PROMPT, 'extended')
+        alert_frame.grid(row=1, column=2, padx=5, rowspan=5, sticky='w')
+        # Prefer the bottom row to force everything up and the right hand
+        # column to force everything left
+        self.middle_frame.grid_rowconfigure(0, weight=0)
+        self.middle_frame.grid_rowconfigure(1, weight=0)
+        self.middle_frame.grid_rowconfigure(2, weight=0)
+        self.middle_frame.grid_rowconfigure(3, weight=0)
+        self.middle_frame.grid_rowconfigure(4, weight=0)
+        self.middle_frame.grid_rowconfigure(5, weight=0)
+        self.middle_frame.grid_rowconfigure(6, weight=0)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(1, weight=0)
+        self.middle_frame.grid_columnconfigure(2, weight=1)
 
     def select_alert_source(self):
         """Move sources from the list of OBS Sources to the list of config
@@ -617,14 +623,10 @@ class LaunchTwitch(SetupPage):
     """
 
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        self.setup_header(ti.LAUNCH_TWITCH_HEADING, ti.LAUNCH_TWITCH_TEXT)
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=1)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.setup_navigation(self.launch_browser,
-                              lambda: self.controller.show_frame(
-                                                            'ObsAlertSources'))
+        headers = (ti.LAUNCH_TWITCH_HEADING, ti.LAUNCH_TWITCH_TEXT)
+        footers = (self.launch_browser,
+                   lambda: self.controller.show_frame('ObsAlertSources'))
+        super().__init__(parent, controller, name, headers, footers)
 
     def launch_browser(self):
         """Disable the Next button, launch the user's web browser and take
@@ -681,57 +683,60 @@ class LaunchTwitch(SetupPage):
         save_config(config)
         next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
         self.controller.nametowidget(next_button_path)['state'] = 'active'
-        self.controller.show_frame('SetupComplete')
+        self.controller.show_frame('StartStopOptions')
 
 
 class StartStopOptions(SetupPage):
 
     def __init__(self, parent, controller, name=''):
-        super().__init__(parent, controller, name=name)
-        self.setup_header(ti.START_STOP_HEADING, ti.START_STOP_TEXT, col_span=2)
+        headers = (ti.START_STOP_HEADING, ti.START_STOP_TEXT)
+        footers = (self.complete,
+                   lambda: self.controller.show_frame('LaunchTwitch'))
         self.safety_check_value = tk.BooleanVar()
         self.safety_options = tk.StringVar()
         self.follow_time = tk.StringVar()
-        safety_check = tk.Checkbutton(self.top_frame,
+        super().__init__(parent, controller, name, headers, footers)
+
+    def _layout_frames(self):
+        super()._layout_frames()
+        safety_check = tk.Checkbutton(self.middle_frame,
                                       text=ti.START_STOP_CHECK,
                                       command=self.safety_check_changed,
                                       variable=self.safety_check_value)
-        safety_check.grid(row=2, column=0, sticky='nw', padx=10)
-        emote_rdo = tk.Radiobutton(self.top_frame, text=ti.START_STOP_EMOTE,
+        safety_check.grid(row=1, column=0, sticky='nw', padx=10)
+        emote_rdo = tk.Radiobutton(self.middle_frame, text=ti.START_STOP_EMOTE,
                                    variable=self.safety_options,
                                    value='emote', state='disabled',
                                    name='emote',
                                    command=self.safety_radio_change)
-        follower_rdo = tk.Radiobutton(self.top_frame, text=ti.START_STOP_FOLLOW,
+        follower_rdo = tk.Radiobutton(self.middle_frame, text=ti.START_STOP_FOLLOW,
                                       variable=self.safety_options,
                                       value='follower', state='disabled',
                                       name='follower',
                                       command=self.safety_radio_change)
-        follow_time = tk.Entry(self.top_frame, textvariable=self.follow_time,
+        follow_time = tk.Entry(self.middle_frame, textvariable=self.follow_time,
                                state='disabled', name='follow_time')
-        follow_time_label = tk.Label(self.top_frame,
+        follow_time_label = tk.Label(self.middle_frame,
                                      text=ti.START_STOP_FOLLOW_TIME,
                                      name='follow_time_label')
-        sub_rdo = tk.Radiobutton(self.top_frame, text=ti.START_STOP_SUB,
+        sub_rdo = tk.Radiobutton(self.middle_frame, text=ti.START_STOP_SUB,
                                  variable=self.safety_options, value='sub',
                                  state='disabled', name='sub',
                                  command=self.safety_radio_change)
-        emote_rdo.grid(row=3, column=0, sticky='nw', padx=10)
-        follower_rdo.grid(row=4, column=0, sticky='nw', padx=10)
-        follow_time.grid(row=4, column=1, sticky='nw', padx=10)
-        follow_time_label.grid(row=5, column=1, sticky='nw', padx=10)
-        sub_rdo.grid(row=5, column=0, sticky='nw', padx=10)
-        self.top_frame.grid_rowconfigure(0, weight=0)
-        self.top_frame.grid_rowconfigure(1, weight=0)
-        self.top_frame.grid_rowconfigure(2, weight=0)
-        self.top_frame.grid_rowconfigure(3, weight=0)
-        self.top_frame.grid_rowconfigure(4, weight=0)
-        self.top_frame.grid_rowconfigure(5, weight=1)
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.top_frame.grid_columnconfigure(1, weight=0)
-        self.setup_navigation(self.complete,
-                              lambda: self.controller.show_frame(
-                                                            'LaunchTwitch'))
+        emote_rdo.grid(row=2, column=0, sticky='nw', padx=10)
+        follower_rdo.grid(row=3, column=0, sticky='nw', padx=10)
+        follow_time.grid(row=3, column=1, sticky='nw', padx=10)
+        follow_time_label.grid(row=4, column=1, sticky='nw', padx=10)
+        sub_rdo.grid(row=4, column=0, sticky='nw', padx=10)
+        self.middle_frame.grid_rowconfigure(0, weight=0)
+        self.middle_frame.grid_rowconfigure(1, weight=0)
+        self.middle_frame.grid_rowconfigure(2, weight=0)
+        self.middle_frame.grid_rowconfigure(3, weight=0)
+        self.middle_frame.grid_rowconfigure(4, weight=0)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(1, weight=0)
+
+
 
     def safety_check_changed(self):
         if self.safety_check_value.get():
@@ -760,14 +765,14 @@ class SetupComplete(SetupPage):
 
     def __init__(self, parent, controller, name=''):
         super().__init__(parent, controller, name=name)
-        self.setup_header(ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
+        self._setup_header(ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
         self.top_frame.grid_rowconfigure(0, weight=0)
         self.top_frame.grid_rowconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(0, weight=1)
-        self.setup_navigation(self.complete,
-                              lambda: self.controller.show_frame(
+        self._setup_footer(self.complete,
+                           lambda: self.controller.show_frame(
                                                             'LaunchTwitch'),
-                              final=True)
+                           final=True)
 
     def complete(self):
         save_config(self.controller.obs_config)
