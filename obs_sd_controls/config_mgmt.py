@@ -45,6 +45,13 @@ def save_config(config):
 
 
 def swap_browser_sources(config, source, url):
+    """:todo: Check this function is really needed in the panic button function
+
+    :param config:
+    :param source:
+    :param url:
+    :return:
+    """
     if not config.has_option('obs_browser_sources', source):
         config['obs_browser_sources'][source] = url
     # Swap Browser source between saved URl and invalid.lan
@@ -144,6 +151,8 @@ class SetupPage(tk.Frame):
     :param headers: A pair of text strings in a tuple (HEADING,
         HEADING_TEXT), to provide to the top frame
     :type headers: tuple
+    :param footers: A tuple of arguments to pass to the _setup_footer method
+    :type tuple:
     :cvar controller: The main application GUI
     :cvar top_frame: The header frame
     :cvar middle_frame: The main frame for the wizard pages
@@ -153,11 +162,6 @@ class SetupPage(tk.Frame):
     def __init__(self, parent, controller, name='', headers=(), footers=()):
         super().__init__(parent, name=name)
         self.controller = controller
-        # Since the safety check options are used twice set the variables here
-        self.safety_check_value = tk.BooleanVar()
-        self.emote_option = tk.BooleanVar()
-        self.safety_option = tk.StringVar()
-        self.follow_time = tk.StringVar()
         # Layouts
         self._layout_frames()
         self._setup_header(*headers)
@@ -352,6 +356,9 @@ class WelcomePage(SetupPage):
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
+        """Add the button to launch hte OBS WebSockets site
+
+        """
         super()._layout_frames()
         obsws_btn = tk.Button(self.middle_frame, text='Get OBS WebSockets',
                               command=self.get_obsws, name='obsws_btn',
@@ -373,6 +380,9 @@ class WelcomePage(SetupPage):
 
     @staticmethod
     def get_obsws():
+        """Open a new web browser tab and load the github release page
+        for the latest release of OBS WebSockets server
+        """
         webbrowser.open_new_tab('https://github.com/Palakis/obs-websocket/'
                                 'releases/tag/4.9.1')
 
@@ -424,6 +434,8 @@ class ObsWsPass(SetupPage):
         self.obsws_pass.set(self.load_password())
 
     def _layout_frames(self):
+        """Layout the OBS WS password and port number form
+        """
         super()._layout_frames()
         password_prompt_lbl = tk.Label(self.middle_frame,
                                        text=ti.OBSWSPASS_PROMPT)
@@ -506,6 +518,8 @@ class ObsAudioSources(SetupPage):
         self.obs_sources = self.get_list_frame_lbx('obs_sources')
         
     def _layout_frames(self):
+        """Layout the OBS Audio source selection form
+        """
         super()._layout_frames()
         obs_lbxf = self.setup_list_frame(ti.OBSALERT_SOURCE_PROMPT,
                                          'obs_sources')
@@ -624,6 +638,8 @@ class ObsAlertSources(SetupPage):
         self.load_default_alert_sources()
 
     def _layout_frames(self):
+        """Layout the OBS Alert sources selection form
+        """
         super()._layout_frames()
         obs_frame = self.setup_list_frame(ti.OBSALERT_SOURCE_PROMPT,
                                           'obs_sources', 'extended')
@@ -740,7 +756,7 @@ class LaunchTwitch(SetupPage):
 
     def return_from_web_server(self, return_object):
         """Receive the Twitch object from the web server and update the
-        config. Finally take user to the last frame
+        config. Take user to the next frame
 
         :param return_object: The JSON object returned from the thanks.js file
         :type return_object: dict
@@ -783,6 +799,13 @@ class SafetyOptions(SetupPage):
     :cvar safety_option: A Tkinter StringVar for safety pages
     :cvar follow_time: A Tkinter StringVar for safety pages
     """
+
+    def __init__(self, parent, controller, name='', headers=(), footers=()):
+        self.safety_check_value = tk.BooleanVar()
+        self.emote_option = tk.BooleanVar()
+        self.safety_option = tk.StringVar()
+        self.follow_time = tk.StringVar()
+        super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self, check_text):
         """Render the safety options. This has been moved up to the parent
@@ -831,16 +854,20 @@ class SafetyOptions(SetupPage):
         self.middle_frame.grid_columnconfigure(1, weight=0)
 
     def safety_check_changed(self):
+        """Enable or disable the safety options when the checkbox is selected
+        """
         self.enable_disable_widgets(self.safety_check_value.get(),
                                     ('emote_chk', 'follower_rdo', 'sub_rdo'))
 
     def safety_radio_change(self):
+        """Enable or disable the additional follower option when the radio
+        options are selected"""
         self.enable_disable_widgets(self.safety_option.get() == 'FOLLOWER',
                                     ('follow_time_ety', 'follow_time_lbl'))
 
     def update_safety(self, section_name, next_frame):
-        """Get the updated value from the entry box and update the config.
-        Before showing the next frame, load the sources from OBS
+        """Get the updated values from the form and update the config.
+        Then show the next frame
 
         :param section_name: The name for the config section
         :type section_name: str
@@ -885,9 +912,13 @@ class StartStopOptions(SafetyOptions):
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
+        """Layout the safety options for the Start/Stop function
+        """
         super()._layout_frames(ti.START_STOP_CHECK)
 
     def update_safety(self):
+        """Update the config for the Start/Stop safety features, then show
+        the next screen"""
         super().update_safety('start_stop_safety', 'PanicButtonOptions')
 
 
@@ -916,9 +947,12 @@ class PanicButtonOptions(SafetyOptions):
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
+        """Layout the safety options for the Panic Button function"""
         super()._layout_frames(ti.PANIC_BUTTON_CHECK)
 
     def update_safety(self):
+        """Update ths config for the Panic Button safety features, then show
+        the next screen"""
         super().update_safety('panic_button_safety', 'AdditionalPanicOptions')
 
 
@@ -946,6 +980,7 @@ class AdditionalPanicOptions(SetupPage):
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
+        """Layout the additional options form"""
         super()._layout_frames()
         ad_chk = tk.Checkbutton(self.middle_frame,
                                 text=ti.ADDITIONAL_AD_CHECK,
@@ -960,6 +995,8 @@ class AdditionalPanicOptions(SetupPage):
         self.middle_frame.grid_columnconfigure(0, weight=1)
 
     def update_additional(self):
+        """Update the config with the additional Panic Button options,
+        then show the final screen"""
         config = self.controller.obs_config
         None if config.has_section('additional') else \
             config.add_section('additional')
@@ -990,15 +1027,24 @@ class SetupComplete(SetupPage):
         super().__init__(parent, controller, name, headers, footers)
 
     def complete(self):
+        """Save the config to the local file and quit the setup wizard"""
         save_config(self.controller.obs_config)
         self.controller.destroy()
 
 
 class TwitchResponseHandler(BaseHTTPRequestHandler):
+    """Local web server handler to handle the return request from the Twitch
+    authentication portal.  Normally the __init__ method would not be
+    overridden but we need to reference the Setup Wizard application
+    stored in the object to change frames when complete
 
+    :params controller: A reference to the main TK application
+    :type controller: tk.Tk
+    :param *args: List of arguments accepted by BaseHTTPRequestHandler
+    :param **kwargs: Dictionary of keyword arguments accepted by
+        BaseHTTPRequestHandler
+    """
     def __init__(self, controller, *args, **kwargs):
-        """Override the init method to add the main setup wizard app
-        controller so it can be referenced on the POST request"""
         self.controller = controller
         super().__init__(*args, **kwargs)
 
