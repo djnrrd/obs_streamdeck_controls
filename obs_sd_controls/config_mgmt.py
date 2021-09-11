@@ -15,6 +15,7 @@ from functools import partial
 from urllib.parse import urlencode
 from simpleobsws import ConnectionFailure
 
+
 def load_config():
     """Load the config file and return the ConfigParser object
 
@@ -87,7 +88,7 @@ class SetupApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
         # Add the frames that will make up the wizard and show the first one.
         self.frames = self.load_frames(container)
-        self.show_frame('WelcomePage')
+        self.show_frame('StartStopOptions')
 
     def load_frames(self, container):
         """Loop through the frames defined in this module, create them and add
@@ -286,6 +287,26 @@ class SetupPage(tk.Frame):
         scroll.config(command=list_box.yview)
         list_box.config(yscrollcommand=scroll.set)
         return frame, list_box
+
+    def enable_disable_widgets(self, test, widgets,
+                               target_frame='middle_frame'):
+        """Enable or Disable a set of widgets based on a truthiness test
+
+        :param test: The statement to evaluate for truthiness
+        :param test: Bool
+        :param widgets: A list or tuple of widgets to enable or disable
+        :type widgets: tuple
+        :param target_frame: the name of the target frame where the widgets are
+        :type target_frame: str
+        """
+        screen_name = str(self)
+        if test:
+            state = 'normal'
+        else:
+            state = 'disabled'
+        for name in widgets:
+            next_button_path = f"{screen_name}.{target_frame}.{name}"
+            self.controller.nametowidget(next_button_path)['state'] = state
 
 
 class WelcomePage(SetupPage):
@@ -736,25 +757,13 @@ class StartStopOptions(SetupPage):
         self.middle_frame.grid_columnconfigure(0, weight=1)
         self.middle_frame.grid_columnconfigure(1, weight=0)
 
-
-
     def safety_check_changed(self):
-        if self.safety_check_value.get():
-            state = 'normal'
-        else:
-            state = 'disabled'
-        for name in ('emote', 'follower', 'sub'):
-            next_button_path = f"main_frame.startstopoptions.top_frame.{name}"
-            self.controller.nametowidget(next_button_path)['state'] = state
+        self.enable_disable_widgets(self.safety_check_value.get(),
+                                    ('emote', 'follower', 'sub'))
 
     def safety_radio_change(self):
-        if self.safety_options.get() == 'follower':
-            state = 'normal'
-        else:
-            state = 'disabled'
-        for name in ('follow_time', 'follow_time_label'):
-            next_button_path = f"main_frame.startstopoptions.top_frame.{name}"
-            self.controller.nametowidget(next_button_path)['state'] = state
+        self.enable_disable_widgets(self.safety_options.get() == 'follower',
+                                    ('follow_time', 'follow_time_label'))
 
     def complete(self):
         save_config(self.controller.obs_config)
