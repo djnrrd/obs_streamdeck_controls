@@ -39,5 +39,18 @@ LAUNCH_TWITCH_HEADING = 'Authorise OBS Streamdeck CTL with Twitch'
 LAUNCH_TWITCH_TEXT = 'Click Next to launch a new web browser tab and ' \
                      'authorise OBS Streamdeck CTL to use your twitch account.'
 
+START_STOP_HEADING = 'Offline Safety Features'
+START_STOP_TEXT = 'The Start/Stop function can be used to lock down your chat' \
+                  ' while you\'re offline, limiting what can happen while you ' \
+                  'and your mods aren\'t watching'
+START_STOP_CHECK = 'Enable Start/Stop safety feature?'
+START_STOP_EMOTE = 'Emote only mode'
+START_STOP_FOLLOW = 'Follower only mode'
+START_STOP_FOLLOW_TIME = 'Follow duration before allowing chat (Examples ' \
+                         '\'3h\', \'2d\', \'1w\')'
+START_STOP_SUB = 'Subscriber only mode'
+
+
+
 COMPLETE_HEADING = 'Setup Complete'
 COMPLETE_TEXT = 'Click Finish to close this setup wizard'
