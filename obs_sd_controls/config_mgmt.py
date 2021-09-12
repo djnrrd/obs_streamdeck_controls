@@ -723,7 +723,37 @@ class LaunchTwitch(SetupPage):
         headers = (ti.LAUNCH_TWITCH_HEADING, ti.LAUNCH_TWITCH_TEXT)
         footers = (self.launch_browser,
                    lambda: self.controller.show_frame('ObsAlertSources'))
+        self.twitch_channel = tk.StringVar()
         super().__init__(parent, controller, name, headers, footers)
+        self.twitch_channel.set(self.load_channel())
+
+    def _layout_frames(self):
+        """Layout the Twitch channel form
+        """
+        super()._layout_frames()
+        channel_lbl = tk.Label(self.middle_frame, text=ti.LAUNCH_TWITCH_PROMPT)
+        channel_entry = tk.Entry(self.middle_frame,
+                                 textvariable=self.twitch_channel)
+        channel_lbl.grid(row=0, column=0, padx=5, sticky='e')
+        channel_entry.grid(row=0, column=1, padx=5, sticky='w')
+        self.middle_frame.grid_rowconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(0, weight=1)
+        self.middle_frame.grid_columnconfigure(1, weight=1)
+
+    def load_channel(self):
+        """If there is an existing channel, return that value.
+
+        :return: The existing channel
+        :rtype: str
+        """
+        config = self.controller.obs_config
+        # Make sure there is an 'twitch' section in the config, adding it if
+        # there isn't since this is the first time we're checking
+        None if config.has_section('twitch') else config.add_section('twitch')
+        if config.has_option('twitch', 'channel'):
+            return config['twitch']['channel']
+        else:
+            return ''
 
     def launch_browser(self):
         """Disable the Next button, launch the user's web browser and take
@@ -773,8 +803,8 @@ class LaunchTwitch(SetupPage):
             raise ValueError('Did not receive expected token_type')
         # Update the config file with the access_token
         config = self.controller.obs_config
-        None if config.has_section('twitch') else config.add_section('twitch')
         config['twitch']['oauth_token'] = return_object['#access_token']
+        config['twitch']['channel'] = self.twitch_channel.get()
         save_config(config)
         next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
         self.controller.nametowidget(next_button_path)['state'] = 'active'

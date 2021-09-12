@@ -1,6 +1,6 @@
-APP_HEADER = 'OBS Streamdeck Control Setup Wizard'
+APP_HEADER = 'OBS Streamdeck CTL Setup Wizard'
 
-WELCOME_HEADING = 'OBS Streamdeck Control Setup'
+WELCOME_HEADING = 'OBS Streamdeck CTL Setup'
 WELCOME_TEXT = 'Welcome to the setup wizard for OBS Streamdeck Controls. ' \
                'These controls are designed for use with OBS Studio and the ' \
                'OBS WebSockets server plugin. Please make sure that you have ' \
@@ -36,8 +36,10 @@ OBSALERT_SOURCE_PROMPT = 'OBS Sources'
 OBSALERT_ALERT_PROMPT = 'Notification/Chat Sources'
 
 LAUNCH_TWITCH_HEADING = 'Authorise OBS Streamdeck CTL with Twitch'
-LAUNCH_TWITCH_TEXT = 'Click Next to launch a new web browser tab and ' \
-                     'authorise OBS Streamdeck CTL to use your twitch account.'
+LAUNCH_TWITCH_TEXT = 'Please provide your Twitch channel name then click Next' \
+                     ' to launch a new web browser tab and authorise OBS ' \
+                     'Streamdeck CTL to use your twitch account.'
+LAUNCH_TWITCH_PROMPT = 'Twitch channel name'
 
 START_STOP_HEADING = 'Offline Safety Features'
 START_STOP_TEXT = 'The Start/Stop function can be used to lock down your chat' \
