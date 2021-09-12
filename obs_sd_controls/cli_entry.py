@@ -3,6 +3,7 @@ from .obs_controls import mute_audio_source, start_stop_stream, set_scene, \
     get_source_settings, set_source_settings
 from .config_mgmt import load_config, save_config, swap_browser_sources, \
     SetupApp
+from .twitch_controls import start_stop_safety
 
 
 def _add_args():
@@ -54,7 +55,7 @@ def _do_action(arg, config):
     elif arg.action == 'panic_button':
         config = panic_button(config, ws_password)
     elif arg.action == 'start_stop':
-        start_stop_stream(ws_password)
+        start_stop(config, ws_password)
     elif arg.action == 'mute_mic':
         mute_audio_source(config['obs']['mic_source'], ws_password)
     elif arg.action == 'mute_desk':
@@ -69,6 +70,14 @@ def _do_action(arg, config):
         raise ValueError('Could not find a valid action from the command line '
                          'arguments')
     return config
+
+
+def start_stop(config, ws_password):
+    #start_stop_stream(ws_password)
+    if config.has_option('start_stop_safety', 'enabled'):
+        username = config['twitch']['channel']
+        token = config['twitch']['oauth_token']
+        start_stop_safety(username, token)
 
 
 def panic_button(config, ws_password):
