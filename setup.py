@@ -2,12 +2,13 @@ from setuptools import setup
 
 setup(
     name='obs_streamdeck_controls',
-    version='0.1.0',
+    version='0.2.0',
     install_requires=['simpleobsws', 'appdirs'],
     packages=['obs_sd_controls'],
     entry_points={
         'console_scripts': ['obs-streamdeck-ctl=obs_sd_controls.cli_entry:main']
     },
+    include_package_data=True,
     url='https://github.com/djnrrd/obs_streamdeck_controls',
     license='GPL-3.0 License',
     author='djnrrd',
