@@ -1,27 +1,4 @@
 from irc.bot import SingleServerIRCBot
-import logging
-import sys
-from time import sleep
-
-
-def _get_logger():
-
-    logger_name = 'batch_bot'
-    logger_level = logging.DEBUG
-    log_line_format = '%(asctime)s | %(name)s - %(levelname)s : %(message)s'
-    log_line_date_format = '%Y-%m-%dT%H:%M:%SZ'
-    logger_ = logging.getLogger()
-    logger_.setLevel(logger_level)
-    logging_handler = logging.StreamHandler(stream=sys.stdout)
-    logging_handler.setLevel(logger_level)
-    logging_formatter = logging.Formatter(log_line_format,
-                                          datefmt=log_line_date_format)
-    logging_handler.setFormatter(logging_formatter)
-    logger_.addHandler(logging_handler)
-    return logger_
-
-
-logger = _get_logger()
 
 
 class TwitchSafetyBot(SingleServerIRCBot):
