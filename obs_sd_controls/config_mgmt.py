@@ -4,7 +4,7 @@ import os
 import tkinter as tk
 from tkinter import font as tk_font
 from tkinter import messagebox as tk_mb
-from .obs_controls import get_all_sources
+from .obs_controls import get_all_sources, get_source_settings
 from . import text_includes as ti
 from .conf import CLIENT_ID, REDIRECT_URI
 import webbrowser
@@ -430,9 +430,9 @@ class ObsWsPass(SetupPage):
                    lambda: controller.show_frame('WelcomePage'))
         # Set the variables before calling super, then manipulate them
         # afterwards
-        self.obsws_pass = tk.StringVar()
+        self.ws_password = tk.StringVar()
         super().__init__(parent, controller, name, headers, footers)
-        self.obsws_pass.set(self.load_password())
+        self.ws_password.set(self.load_password())
 
     def _layout_frames(self):
         """Layout the OBS WS password and port number form
@@ -440,10 +440,10 @@ class ObsWsPass(SetupPage):
         super()._layout_frames()
         password_prompt_lbl = tk.Label(self.middle_frame,
                                        text=ti.OBSWSPASS_PROMPT)
-        obsws_pass_entry = tk.Entry(self.middle_frame,
-                                    textvariable=self.obsws_pass)
+        ws_password_entry = tk.Entry(self.middle_frame,
+                                    textvariable=self.ws_password)
         password_prompt_lbl.grid(row=0, column=0, sticky='e', padx=5)
-        obsws_pass_entry.grid(row=0, column=1, sticky='w')
+        ws_password_entry.grid(row=0, column=1, sticky='w')
         self.middle_frame.grid_rowconfigure(0, weight=1)
         self.middle_frame.grid_columnconfigure(0, weight=1)
         self.middle_frame.grid_columnconfigure(1, weight=1)
@@ -458,8 +458,8 @@ class ObsWsPass(SetupPage):
         # Make sure there is an 'obs' section in the config, adding it if
         # there isn't since this is the first time we're checking
         None if config.has_section('obs') else config.add_section('obs')
-        if config.has_option('obs', 'obsws_password'):
-            return config['obs']['obsws_password']
+        if config.has_option('obs', 'ws_password'):
+            return config['obs']['ws_password']
         else:
             return ''
 
@@ -468,7 +468,7 @@ class ObsWsPass(SetupPage):
         Before showing the next frame, load the sources from OBS
         """
         config = self.controller.obs_config
-        config['obs']['obsws_password'] = self.obsws_pass.get()
+        config['obs']['ws_password'] = self.ws_password.get()
         self.get_obs_sources()
 
     def get_obs_sources(self):
@@ -479,7 +479,7 @@ class ObsWsPass(SetupPage):
         self.controller.show_busy()
         config = self.controller.obs_config
         try:
-            obs_sources = get_all_sources(config['obs']['obsws_password'])
+            obs_sources = get_all_sources(config['obs']['ws_password'])
             self.controller.clear_busy()
             self.controller.frames['ObsAudioSources'].\
                 load_obs_sources(obs_sources)
@@ -696,11 +696,23 @@ class ObsAlertSources(SetupPage):
 
     def update_sources(self):
         """Get the updated values from the Alert sources Listbox and add them to
-        the config. Then save the config and close the setup wizard"""
+        the config. Then save the config and move to the twitch stage"""
         alerts = self.alert_sources.get(0, 'end')
         config = self.controller.obs_config
+        None if config.has_section('obs_browser_sources') else \
+            config.add_section('obs_browser_sources')
         config['obs']['alert_sources'] = ':'.join(alerts)
+        for source in alerts:
+            config['obs_browser_sources'][source] = self.get_source_url(source)
         self.controller.show_frame('LaunchTwitch')
+        
+    def get_source_url(self, source):
+        """Connect to OBS to get the URL for the supplied source
+        """
+        config = self.controller.obs_config
+        ws_password = config['obs']['ws_password']
+        settings = get_source_settings(source, ws_password)
+        return settings['url']
 
 
 class LaunchTwitch(SetupPage):
@@ -764,7 +776,8 @@ class LaunchTwitch(SetupPage):
         base_url = 'https://id.twitch.tv/oauth2/authorize'
         params = {'client_id': CLIENT_ID, 'redirect_uri': REDIRECT_URI,
                   'response_type': 'token',
-                  'scope': 'channel:moderate chat:edit chat:read'}
+                  'scope': 'channel:moderate chat:edit chat:read '
+                           'channel_commercial channel_editor'}
         url_params = urlencode(params)
         url = f"{base_url}?{url_params}"
         # Placeholder while building. don't want to hammer Twitch
@@ -797,7 +810,8 @@ class LaunchTwitch(SetupPage):
         for key in return_object:
             if key not in expected_keys:
                 raise KeyError('Did not receive expected keys from Twitch')
-        if return_object['scope'] != 'channel:moderate chat:edit chat:read':
+        if return_object['scope'] != 'channel:moderate chat:edit chat:read ' \
+                                     'channel_commercial channel_editor':
             raise ValueError('Did not match scope requested')
         if return_object['token_type'] != 'bearer':
             raise ValueError('Did not receive expected token_type')
