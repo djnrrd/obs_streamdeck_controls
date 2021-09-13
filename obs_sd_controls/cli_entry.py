@@ -3,7 +3,7 @@ from .obs_controls import mute_audio_source, start_stop_stream, set_scene, \
     get_source_settings, set_source_settings
 from .config_mgmt import load_config, save_config, swap_browser_sources, \
     SetupApp
-from .twitch_controls import start_stop_safety
+from .twitch_controls import start_stop_safety, live_safety
 
 
 def _add_args():
@@ -73,11 +73,19 @@ def _do_action(arg, config):
 
 
 def start_stop(config, ws_password):
-    #start_stop_stream(ws_password)
+    start_stop_stream(ws_password)
     if config.has_option('start_stop_safety', 'enabled'):
         username = config['twitch']['channel']
         token = config['twitch']['oauth_token']
-        start_stop_safety(username, token)
+        enabled = eval(config['start_stop_safety']['enabled'])
+        emote_mode = eval(config['start_stop_safety']['emote_mode']) if \
+            config.has_option('start_stop_safety', 'emote_mode') else False
+        method = config['start_stop_safety']['method'] if \
+            config.has_option('start_stop_safety', 'method') else ''
+        follow_time = config['start_stop_safety']['follow_time'] if \
+            config.has_option('start_stop_safety', 'follow_time') else ''
+        start_stop_safety(username, token, enabled, emote_mode, method,
+                          follow_time)
 
 
 def panic_button(config, ws_password):
@@ -88,10 +96,6 @@ def panic_button(config, ws_password):
     The follows will cause sound alert overlays to queue up notifications,
     so this function will disable and re-enable those overlays as configured
     in sd_controls.ini
-
-    TODO Integrate with twitch APIs to set chat to "Subscriber only mode"
-    or "Followers only mode" (based on follow duration) to block hateful
-    messages in chat.
 
     :param config: ConfigParser object created in cli_tools
     :type config: ConfigParser
@@ -115,6 +119,22 @@ def panic_button(config, ws_password):
         # Update the settings and mute the sources.
         mute_audio_source(source, ws_password)
         set_source_settings(source, settings, ws_password)
+    if config.has_option('panic_button_safety', 'enabled'):
+        username = config['twitch']['channel']
+        token = config['twitch']['oauth_token']
+        enabled = eval(config['panic_button_safety']['enabled'])
+        emote_mode = eval(config['panic_button_safety']['emote_mode']) if \
+            config.has_option('panic_button_safety', 'emote_mode') else False
+        method = config['panic_button_safety']['method'] if \
+            config.has_option('panic_button_safety', 'method') else ''
+        follow_time = config['panic_button_safety']['follow_time'] if \
+            config.has_option('panic_button_safety', 'follow_time') else ''
+        advert = config['panic_button_safety']['advert'] if \
+            config.has_option('panic_button_safety', 'advert') else False
+        marker = config['panic_button_safety']['marker'] if \
+            config.has_option('panic_button_safety', 'marker') else False
+        live_safety(username, token, enabled, emote_mode, method,
+                    follow_time, advert, marker)
     return config
 
 
