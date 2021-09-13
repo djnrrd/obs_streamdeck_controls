@@ -1,8 +1,7 @@
 import argparse
 from .obs_controls import mute_audio_source, start_stop_stream, set_scene, \
     get_source_settings, set_source_settings
-from .config_mgmt import load_config, save_config, swap_browser_sources, \
-    SetupApp
+from .config_mgmt import load_config, SetupApp
 from .twitch_controls import start_stop_safety, live_safety
 
 
@@ -37,7 +36,7 @@ def _add_args():
     return parser
 
 
-def _do_action(arg, config):
+def _do_action(arg):
     """Check the command line arguments and run the appropriate function
 
     :param arg: The command line arguments as gathered by argparser
@@ -45,16 +44,16 @@ def _do_action(arg, config):
     :param config: Config details loaded by ConfigParser
     :type config: ConfigParser
     """
-    if config.has_option('obs', 'obsws_password'):
-        ws_password = config['obs']['obsws_password']
+    config = load_config()
+    if config.has_option('obs', 'ws_password'):
+        ws_password = config['obs']['ws_password']
     else:
         ws_password = ''
     if arg.action == 'setup':
         app = SetupApp(config)
         app.mainloop()
-        # config = config_setup(config)
     elif arg.action == 'live_safety':
-        config = live_safety_button(config, ws_password)
+        live_safety_button(config, ws_password)
     elif arg.action == 'start_stop':
         start_stop(config, ws_password)
     elif arg.action == 'mute_mic':
@@ -70,10 +69,17 @@ def _do_action(arg, config):
     else:
         raise ValueError('Could not find a valid action from the command line '
                          'arguments')
-    return config
 
 
 def start_stop(config, ws_password):
+    """Start/Stop streaming in OBS and if twitch chat safety features have
+    been enabled switch those as well
+
+    :param config: Config details loaded by ConfigParser
+    :type config: ConfigParser
+    :param ws_password: The password for the OBS WebSockets server
+    :type ws_password: str
+    """
     start_stop_stream(ws_password)
     if config.has_option('start_stop_safety', 'enabled'):
         username = config['twitch']['channel']
@@ -96,33 +102,27 @@ def live_safety_button(config, ws_password):
 
     The follows will cause sound alert overlays to queue up notifications,
     so this function will disable and re-enable those overlays as configured
-    in sd_controls.ini
+    in the ini file.  Additionally, chat safety features can be enabled
 
     :param config: ConfigParser object created in cli_tools
     :type config: ConfigParser
     :param ws_password: The password for the OBS WebSockets server
     :type ws_password: str
-    :return: The ConfigParser object which may have been updated
-    :rtype: ConfigParser
-    :raises ValueError: If there is a conflict between either the saved URL for
-        the source, or the invalid.lan address that temporarily overwrites
-        the source's URL.
     """
     for source in config['obs']['alert_sources'].split(':'):
-        # Get the current settings for the alert source.
+        # Get the current settings for the alert source from OBS.
         settings = get_source_settings(source, ws_password)
-        url, config = swap_browser_sources(config, source, settings['url'])
-        settings['url'] = url
-        if settings['reroute_audio']:
-            settings['reroute_audio'] = False
+        # Swap between invalid.lan and the value from config
+        if settings['url'] == 'http://invalid.lan':
+            settings['url'] = config['obs_browser_sources'][source]
         else:
-            settings['reroute_audio'] = True
-        # Update the settings and mute the sources.
-        mute_audio_source(source, ws_password)
+            settings['url'] = 'http://invalid.lan'
+        # Update the settings in OBS
         set_source_settings(source, settings, ws_password)
     if config.has_option('live_safety', 'enabled'):
         username = config['twitch']['channel']
         token = config['twitch']['oauth_token']
+        # Use eval to make sure the string 'False' is passed as a boolean False
         enabled = eval(config['live_safety']['enabled'])
         emote_mode = eval(config['live_safety']['emote_mode']) if \
             config.has_option('live_safety', 'emote_mode') else False
@@ -136,20 +136,16 @@ def live_safety_button(config, ws_password):
             config.has_option('live_safety', 'marker') else False
         live_safety(username, token, enabled, emote_mode, method,
                     follow_time, advert, marker)
-    return config
 
 
 def main():
     """Entry point for the console script 'obs-streamdeck-ctl'
     """
-    config = load_config()
     # Get CLI arguments
     parser = _add_args()
     arg = parser.parse_args()
     # Main functions.
-    config = _do_action(arg, config)
-    # Finally save the config
-    save_config(config)
+    _do_action(arg)
 
 
 if __name__ == '__main__':
