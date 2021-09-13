@@ -111,7 +111,7 @@ class SetupApp(tk.Tk):
         ret_dict = dict()
         for f in (WelcomePage, ExistingConfig, ObsWsPass, ObsAudioSources,
                   ObsAlertSources, LaunchTwitch, StartStopOptions,
-                  PanicButtonOptions, AdditionalPanicOptions, SetupComplete):
+                  LiveSafetyOptions, AdditionalSafetyOptions, SetupComplete):
             page_name = f.__name__
             frame = f(container, self, name=page_name.lower())
             frame.grid(row=0, column=0, sticky='nsew')
@@ -613,7 +613,7 @@ class ObsAudioSources(SetupPage):
 
 class ObsAlertSources(SetupPage):
     """A Page to determine the Notification and chat sources in OBS that
-    would be disabled in the Panic Button functions.
+    would be disabled in the Live Safety functions.
 
     :param parent: The parent frame to attach this frame to
     :type parent: tk.Frame
@@ -781,7 +781,7 @@ class LaunchTwitch(SetupPage):
         url_params = urlencode(params)
         url = f"{base_url}?{url_params}"
         # Placeholder while building. don't want to hammer Twitch
-        url = 'http://localhost:8000/'
+        # url = 'http://localhost:8000/'
         webbrowser.open_new_tab(url)
         # Launch the Web Server in a separate thread to wait for the response
         httpd = threading.Thread(target=self.start_web_server)
@@ -982,11 +982,11 @@ class StartStopOptions(SafetyOptions):
     def update_safety(self):
         """Update the config for the Start/Stop safety features, then show
         the next screen"""
-        super().update_safety('start_stop_safety', 'PanicButtonOptions')
+        super().update_safety('start_stop_safety', 'LiveSafetyOptions')
 
 
-class PanicButtonOptions(SafetyOptions):
-    """A Page to select the Panic Button safety options.
+class LiveSafetyOptions(SafetyOptions):
+    """A Page to select the Live Safety options.
 
     :param parent: The parent frame to attach this frame to
     :type parent: tk.Frame
@@ -1004,24 +1004,24 @@ class PanicButtonOptions(SafetyOptions):
     :cvar follow_time: A Tkinter StringVar for safety pages
     """
     def __init__(self, parent, controller, name=''):
-        headers = (ti.PANIC_BUTTON_HEADING, ti.PANIC_BUTTON_TEXT)
+        headers = (ti.LIVE_SAFETY_HEADING, ti.LIVE_SAFETY_TEXT)
         footers = (self.update_safety,
                    lambda: self.controller.show_frame('StartStopOptions'))
         super().__init__(parent, controller, name, headers, footers)
-        self.load_safety('panic_button_safety')
+        self.load_safety('live_safety')
 
     def _layout_frames(self):
-        """Layout the safety options for the Panic Button function"""
-        super()._layout_frames(ti.PANIC_BUTTON_CHECK)
+        """Layout the safety options for the Live Safety function"""
+        super()._layout_frames(ti.LIVE_SAFETY_CHECK)
 
     def update_safety(self):
-        """Update ths config for the Panic Button safety features, then show
+        """Update th2 config for the Live Safety features, then show
         the next screen"""
-        super().update_safety('panic_button_safety', 'AdditionalPanicOptions')
+        super().update_safety('live_safety', 'AdditionalSafetyOptions')
 
 
-class AdditionalPanicOptions(SetupPage):
-    """A Page to collect additional options for the Panic Button function.
+class AdditionalSafetyOptions(SetupPage):
+    """A Page to collect additional options for the Live Safety function.
 
     :param parent: The parent frame to attach this frame to
     :type parent: tk.Frame
@@ -1038,7 +1038,7 @@ class AdditionalPanicOptions(SetupPage):
     def __init__(self, parent, controller, name=''):
         headers = (ti.ADDITIONAL_HEADING, ti.ADDITIONAL_TEXT)
         footers = (self.update_additional,
-                   lambda: self.controller.show_frame('PanicButtonOptions'))
+                   lambda: self.controller.show_frame('LiveSafetyOptions'))
         self.ad_check_value = tk.BooleanVar()
         self.marker_check_value = tk.BooleanVar()
         super().__init__(parent, controller, name, headers, footers)
@@ -1060,7 +1060,7 @@ class AdditionalPanicOptions(SetupPage):
         self.middle_frame.grid_columnconfigure(0, weight=1)
 
     def update_additional(self):
-        """Update the config with the additional Panic Button options,
+        """Update the config with the additional Live Safety options,
         then show the final screen"""
         config = self.controller.obs_config
         None if config.has_section('additional') else \

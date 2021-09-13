@@ -22,8 +22,9 @@ def _add_args():
     sub_parser.add_parser('mute_all',
                           description='Mute/Unmute both Desktop and Microphone '
                                       'sources')
-    sub_parser.add_parser('panic_button',
-                          description='Disable/Enable alert sources in case of '
+    sub_parser.add_parser('live_safety',
+                          description='Disable/Enable alert sources in OBS '
+                                      'and lockdown Twitch chat in case of '
                                       'hate raids')
     scene_parser = sub_parser.add_parser('scene',
                                          description='Switch between scenes in '
@@ -52,8 +53,8 @@ def _do_action(arg, config):
         app = SetupApp(config)
         app.mainloop()
         # config = config_setup(config)
-    elif arg.action == 'panic_button':
-        config = panic_button(config, ws_password)
+    elif arg.action == 'live_safety':
+        config = live_safety_button(config, ws_password)
     elif arg.action == 'start_stop':
         start_stop(config, ws_password)
     elif arg.action == 'mute_mic':
@@ -88,7 +89,7 @@ def start_stop(config, ws_password):
                           follow_time)
 
 
-def panic_button(config, ws_password):
+def live_safety_button(config, ws_password):
     """Sadly, people are performing "hate raids" on twitch, raiding channels
     and getting bot accounts to follow the streamer and spam chat with
     hateful messages.
@@ -119,20 +120,20 @@ def panic_button(config, ws_password):
         # Update the settings and mute the sources.
         mute_audio_source(source, ws_password)
         set_source_settings(source, settings, ws_password)
-    if config.has_option('panic_button_safety', 'enabled'):
+    if config.has_option('live_safety', 'enabled'):
         username = config['twitch']['channel']
         token = config['twitch']['oauth_token']
-        enabled = eval(config['panic_button_safety']['enabled'])
-        emote_mode = eval(config['panic_button_safety']['emote_mode']) if \
-            config.has_option('panic_button_safety', 'emote_mode') else False
-        method = config['panic_button_safety']['method'] if \
-            config.has_option('panic_button_safety', 'method') else ''
-        follow_time = config['panic_button_safety']['follow_time'] if \
-            config.has_option('panic_button_safety', 'follow_time') else ''
-        advert = config['panic_button_safety']['advert'] if \
-            config.has_option('panic_button_safety', 'advert') else False
-        marker = config['panic_button_safety']['marker'] if \
-            config.has_option('panic_button_safety', 'marker') else False
+        enabled = eval(config['live_safety']['enabled'])
+        emote_mode = eval(config['live_safety']['emote_mode']) if \
+            config.has_option('live_safety', 'emote_mode') else False
+        method = config['live_safety']['method'] if \
+            config.has_option('live_safety', 'method') else ''
+        follow_time = config['live_safety']['follow_time'] if \
+            config.has_option('live_safety', 'follow_time') else ''
+        advert = config['live_safety']['advert'] if \
+            config.has_option('live_safety', 'advert') else False
+        marker = config['live_safety']['marker'] if \
+            config.has_option('live_safety', 'marker') else False
         live_safety(username, token, enabled, emote_mode, method,
                     follow_time, advert, marker)
     return config
