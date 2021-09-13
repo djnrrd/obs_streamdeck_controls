@@ -1,3 +1,4 @@
 simpleobsws
 sphinx
 appdirs
+irc

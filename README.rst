@@ -13,10 +13,10 @@ such as the Elgato Stream Deck, notably on Linux when using the
 Features
 ********
 
-* Start/Stop streaming
+* Start/Stop streaming, including enabling/disabling chat safety features
 * Mute/Unmute Microphone and Desktop Audio sources, including supporting custom audio sources
 * Scene switching
-* Panic Button to combat the effects of hate raids.
+* Live Safety mode to combat the effects of hate raids.
 
 Installation
 ============
