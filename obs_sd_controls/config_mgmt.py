@@ -332,7 +332,7 @@ class WelcomePage(SetupPage):
 
     def __init__(self, parent, controller, name=''):
         headers = (ti.WELCOME_HEADING, ti.WELCOME_TEXT)
-        footers = (self.check_existing, )
+        footers = (self.check_existing,)
         super().__init__(parent, controller, name, headers, footers)
 
     def _layout_frames(self):
@@ -382,6 +382,7 @@ class ExistingConfig(SetupPage):
     :cvar middle_frame: The main frame for the wizard pages
     :cvar bottom_frame: The navigation frame
     """
+
     def __init__(self, parent, controller, name=''):
         headers = (ti.EXISTING_HEADING, ti.EXISTING_TEXT)
         footers = (lambda: controller.show_frame('ObsWsPass'),
@@ -403,6 +404,7 @@ class ObsWsPass(SetupPage):
     :cvar middle_frame: The main frame for the wizard pages
     :cvar bottom_frame: The navigation frame
     """
+
     def __init__(self, parent, controller, name=''):
         headers = (ti.OBSWSPASS_HEADING, ti.OBSWSPASS_TEXT)
         footers = (self.update_password,
@@ -420,7 +422,7 @@ class ObsWsPass(SetupPage):
         password_prompt_lbl = tk.Label(self.middle_frame,
                                        text=ti.OBSWSPASS_PROMPT)
         ws_password_entry = tk.Entry(self.middle_frame,
-                                    textvariable=self.ws_password)
+                                     textvariable=self.ws_password)
         password_prompt_lbl.grid(row=0, column=0, sticky='e', padx=5)
         ws_password_entry.grid(row=0, column=1, sticky='w')
         self.middle_frame.grid_rowconfigure(0, weight=1)
@@ -460,7 +462,7 @@ class ObsWsPass(SetupPage):
         try:
             obs_sources = get_all_sources(config['obs']['ws_password'])
             self.controller.clear_busy()
-            self.controller.frames['ObsAudioSources'].\
+            self.controller.frames['ObsAudioSources']. \
                 load_obs_sources(obs_sources)
             self.controller.show_frame('ObsAudioSources')
         except (ConnectionRefusedError, NameError, ConnectionFailure):
@@ -486,7 +488,7 @@ class ObsAudioSources(SetupPage):
 
     def __init__(self, parent, controller, name=''):
         headers = (ti.OBSAUDIO_HEADING, ti.OBSAUDIO_TEXT)
-        footers = (self.update_sources, 
+        footers = (self.update_sources,
                    lambda: self.controller.show_frame('ObsWsPass'))
         # Set the variables before calling super, then manipulate them
         # afterwards
@@ -496,7 +498,7 @@ class ObsAudioSources(SetupPage):
         self.mic_source.set(self.load_mic_source())
         self.desktop_source.set(self.load_desktop_source())
         self.obs_sources = self.get_list_frame_lbx('obs_sources')
-        
+
     def _layout_frames(self):
         """Layout the OBS Audio source selection form
         """
@@ -508,7 +510,7 @@ class ObsAudioSources(SetupPage):
                                    command=self.select_mic_source)
         mic_source_btn.grid(row=2, column=1, padx=10, sticky='ew')
         mic_source_lbl = tk.Label(self.middle_frame,
-                                    text=ti.OBSAUDIO_MIC_PROMPT)
+                                  text=ti.OBSAUDIO_MIC_PROMPT)
         mic_source_lbl.grid(row=1, column=2, sticky='sw')
         mic_source_entry = tk.Entry(self.middle_frame,
                                     textvariable=self.mic_source)
@@ -533,7 +535,7 @@ class ObsAudioSources(SetupPage):
         self.middle_frame.grid_columnconfigure(0, weight=1)
         self.middle_frame.grid_columnconfigure(1, weight=0)
         self.middle_frame.grid_columnconfigure(2, weight=1)
-    
+
     def load_mic_source(self):
         """If there is an existing Mic source, return that value, otherwise
         return the default
@@ -607,8 +609,8 @@ class ObsAlertSources(SetupPage):
     """
 
     def __init__(self, parent, controller, name=''):
-        headers = (ti.OBSALERT_HEADING, ti.OBSALERT_TEXT) 
-        footers = (self.update_sources, 
+        headers = (ti.OBSALERT_HEADING, ti.OBSALERT_TEXT)
+        footers = (self.update_sources,
                    lambda: self.controller.show_frame('ObsAudioSources'))
         super().__init__(parent, controller, name, headers, footers)
         self.obs_sources = self.get_list_frame_lbx('obs_sources')
@@ -684,7 +686,7 @@ class ObsAlertSources(SetupPage):
         for source in alerts:
             config['obs_browser_sources'][source] = self.get_source_url(source)
         self.controller.show_frame('LaunchTwitch')
-        
+
     def get_source_url(self, source):
         """Connect to OBS to get the URL for the supplied source
         """
@@ -751,7 +753,7 @@ class LaunchTwitch(SetupPage):
         them to the Twitch OAuth page.  Start a web server to listen for the
         response"""
         # Disable my next button
-        self.enable_disable_widgets(False, ('next', ), 'bottom_frame')
+        self.enable_disable_widgets(False, ('next',), 'bottom_frame')
         base_url = 'https://id.twitch.tv/oauth2/authorize'
         params = {'client_id': CLIENT_ID, 'redirect_uri': REDIRECT_URI,
                   'response_type': 'token',
@@ -946,6 +948,7 @@ class StartStopOptions(SafetyOptions):
     :cvar safety_option: A Tkinter StringVar for safety pages
     :cvar follow_time: A Tkinter StringVar for safety pages
     """
+
     def __init__(self, parent, controller, name=''):
         headers = (ti.START_STOP_HEADING, ti.START_STOP_TEXT)
         footers = (self.update_safety,
@@ -982,6 +985,7 @@ class LiveSafetyOptions(SafetyOptions):
     :cvar safety_option: A Tkinter StringVar for safety pages
     :cvar follow_time: A Tkinter StringVar for safety pages
     """
+
     def __init__(self, parent, controller, name=''):
         headers = (ti.LIVE_SAFETY_HEADING, ti.LIVE_SAFETY_TEXT)
         footers = (self.update_safety,
@@ -1073,6 +1077,7 @@ class SetupComplete(SetupPage):
     :cvar middle_frame: The main frame for the wizard pages
     :cvar bottom_frame: The navigation frame
     """
+
     def __init__(self, parent, controller, name=''):
         headers = (ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
         footers = (self.complete,
@@ -1092,12 +1097,13 @@ class TwitchResponseHandler(BaseHTTPRequestHandler):
     overridden but we need to reference the Setup Wizard application
     stored in the object to change frames when complete
 
-    :params controller: A reference to the main TK application
+    :param controller: A reference to the main TK application
     :type controller: tk.Tk
-    :param *args: List of arguments accepted by BaseHTTPRequestHandler
-    :param **kwargs: Dictionary of keyword arguments accepted by
+    :param \*args: List of arguments accepted by BaseHTTPRequestHandler
+    :param \*\*kwargs: Dictionary of keyword arguments accepted by
         BaseHTTPRequestHandler
     """
+
     def __init__(self, controller, *args, **kwargs):
         self.controller = controller
         super().__init__(*args, **kwargs)
@@ -1131,7 +1137,7 @@ class TwitchResponseHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         # Pass the twitch object back to the setup app and shut down the server
-        self.controller.frames['LaunchTwitch'].\
+        self.controller.frames['LaunchTwitch']. \
             return_from_web_server(new_object)
         safe_shut = threading.Thread(target=self.server.shutdown)
         safe_shut.daemon = True

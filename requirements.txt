@@ -2,3 +2,4 @@ simpleobsws
 sphinx
 appdirs
 irc
+sphinx-rtd-theme

@@ -1,6 +1,6 @@
-#######################
-OBS Streamdeck Controls
-#######################
+##################
+OBS Streamdeck CTL
+##################
 
 Introduction
 ============
@@ -26,9 +26,10 @@ Requirements
 
 * Python >= 3.6
 * Pip and Internet access
+* OBS Studio*
 * `OBS WebSockets API <https://github.com/Palakis/obs-websocket>`_
 
-Streamlabs OBS/SLOBS is *not* supported
+\* Streamlabs OBS/SLOBS is *not* currently supported
 
 Downloading
 ***********
@@ -74,6 +75,8 @@ following command::
 
 Usage
 =====
+
+pass
 
 ::
 

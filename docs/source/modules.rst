@@ -30,3 +30,4 @@ library
 
 .. automodule:: obs_sd_controls.obs_controls
    :members:
+
