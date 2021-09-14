@@ -1,14 +1,15 @@
-#######################
-OBS Streamdeck Controls
-#######################
+##################
+OBS Streamdeck CTL
+##################
 
 Introduction
 ============
 
-A command line tool for controlling OBS Studio via the `OBS WebSockets API
+A command line tool for controlling OBS Studio [1]_ via the `OBS WebSockets API
 <https://github.com/Palakis/obs-websocket>`_, designed for use with tools
-such as the Elgato Stream Deck, notably on Linux when using the
-`streamdeck_ui <https://timothycrosley.github.io/streamdeck-ui/>`_ program.
+such as the Elgato Stream Deck, or any hardware tool where you can assign a
+command to a single button press.
+
 
 Features
 ********
@@ -21,39 +22,43 @@ Features
 Installation
 ============
 
+OBS Streamdeck CTL is written in Python, and is planned to be published to
+PyPi
+
 Requirements
 ************
 
-* Python >= 3.6
-* Pip and Internet access
+* `Python <https://www.python.org/>`_ >= 3.6
+* Pip [2]_ and Internet access
+* OBS Studio [1]_
 * `OBS WebSockets API <https://github.com/Palakis/obs-websocket>`_
 
-Streamlabs OBS/SLOBS is *not* supported
+Installing From Source
+**********************
 
-Downloading
-***********
+Obtaining Source code
+---------------------
 
-From git
---------
-
-Clone the git repository to obtain the main branch::
+Download the required release from the `releases page <https://github
+.com/djnrrd/obs_streamdeck_controls/releases>`_ or clone the git repository
+to obtain the main branch::
 
     git clone https://github.com/djnrrd/obs_streamdeck_controls.git
 
-From releases
--------------
-
-Download the required release from the `releases page <https://github
-.com/djnrrd/obs_streamdeck_controls/releases>`_
-
 Installing
-**********
+----------
+
+Windows users need more documentation, `but this guide <https://projects
+.raspberrypi.org/en/projects/using-pip-on-windows>`_ should help.
 
 Change directory into the downloaded folder and install locally via pip. It
 is recommended that you use the --user flag to install in your user directory.::
 
    cd obs_streamdeck_controls
    pip install --user --use-feature=in-tree-build .
+
+Post Install
+------------
 
 This will install the command line program ``obs-streamdeck-ctl`` to your
 ``$HOME/.local/bin`` folder. Add::
@@ -62,47 +67,104 @@ This will install the command line program ``obs-streamdeck-ctl`` to your
 
 to your ``.bashrc`` file, if you haven't already.
 
+Using
+=====
+
 Initial Setup
 -------------
 
 After installing OBS Streamdeck Controls you will need to provide information
-regarding your OBS WebSockets password, and names of your Microphone, Desktop,
-and alert overlay sources.  Run the setup wizard on a terminal with the
-following command::
+regarding your OBS WebSockets password, names of your Microphone, Desktop,
+and alert overlay sources, authorise the application with twitch, and set
+your safety options.
+
+Run the following command on a terminal/command line to launch a setup wizard::
 
    obs-streamdeck-ctl setup
 
-Usage
-=====
+Using the Scripts
+-----------------
 
-::
+All scripts are launched by the same command line program::
 
-    $ ./obs-streamdeck-ctl -h
-    usage: obs-streamdeck-ctl [-h]
-                      {start_stop,mute_mic,mute_desk,mute_all,panic_button,scene}
-                      ...
+   obs-streakdeck-ctl SCRIPT_NAME
 
-    positional arguments:
-       {start_stop,mute_mic,mute_desk,mute_all,panic_button,scene}
+Where SCRIPT_NAME is one of the following:
 
-    optional arguments:
-       -h, --help            show this help message and exit
+* `start_stop`_
+* `mute_mic`_
+* `mute_desk`_
+* `mute_all`_
+* `scene X`_
+* `live_safety`_
+* `setup`_
 
-    $ ./obs-streamdeck-ctl scene -h
-    usage: obs-streamdeck-ctl scene [-h] scene_number
+start_stop
+++++++++++
 
-    positional arguments:
-       scene_number
+Start or Stop live streaming, and if Twitch chat safety features are enabled,
+toggle these.  Safety features may put chat into Subscriber or Follower only
+mode and optionally switch Emote only mode on.
 
-    optional arguments:
-       -h, --help    show this help message and exit
+Because the Subscriber, Follower, and Emote only modes function like a toggle
+switch, If you enable any of these modes when live and don't disable them
+before using this function to stop the stream, it may disable that mode when
+you are offline.
 
-Arguments
-*********
+mute_mic
+++++++++
 
-* start_stop - Start/Stop the stream
-* mute_mic - Mute/Unmute the Microphone source
-* mute_desk - Mute/Unmute the Desktop audio source
-* mute_all - Mute/Unmute both Desktop and Microphone sources
-* panic_button - Disable/Enable alert sources in case of hate raids
-* scene X - The scene number to select (from the top down)
+Toggle the mute function on your Microphone input source. If you use a
+different Microphone source to the default you can select that with the setup
+wizard.
+
+mute_desk
++++++++++
+
+Toggle the mute function on your Desktop Audio input source. If you use a
+different Desktop Audio source to the default you can select that with the setup
+wizard.
+
+mute_all
+++++++++
+
+Toggle the mute function on both the Desktop and Microphone Audio sources
+
+scene X
++++++++
+
+Switch to Scene X in OBS Studio. X is the number of the Scene in the Scene
+List, counting down from the top and starting with 1.
+
+live_safety
++++++++++++
+
+Sadly, people have taken to "Hate Raids" on Twitch, where your chat can be
+overwhelmed with hateful messages from multiple bot accounts. These bot
+accounts will also mass follow the channel, to queue up repeated alerts from
+any sound/screen alert web overlay services.
+
+Live Safety can enable and disable Subscriber or Follower only mode in chat and
+optionally enable and disable Emote only mode.
+
+Live Safety can also enable and disable sound/screen alert web overlay
+services, as well as any other web overlay services that you may use, like
+chat.
+
+Like the `start_stop`_ function, enabling and disabling the chat modes and
+web overlay services is like a toggle function. So ending a stream before
+running Live Safety again could leave your web overlay services disabled.
+
+
+setup
++++++
+
+Launch the setup wizard, see Initial Setup for details
+
+Footnotes
+=========
+
+.. [1] Streamlabs OBS/SLOBS is *not* currently supported
+.. [2] Pip is a package manager and should be included when you install
+       Python. Some Linux distributions may not include pip automatically and it
+       may have to be installed from your Linux distribution package manager

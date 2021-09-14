@@ -1,22 +1,10 @@
-#######################
-OBS Streamdeck Controls
-#######################
+##################
+OBS Streamdeck CTL
+##################
 
 .. include:: ../../README.rst
    :start-after: Introduction
    :end-before: Installation
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 
-   installation
-   usage
-   modules
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. [1] Streamlabs OBS/SLOBS is *not* currently supported
