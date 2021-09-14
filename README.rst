@@ -71,7 +71,7 @@ Using
 =====
 
 Initial Setup
--------------
+*************
 
 After installing OBS Streamdeck Controls you will need to provide information
 regarding your OBS WebSockets password, names of your Microphone, Desktop,
@@ -83,7 +83,7 @@ Run the following command on a terminal/command line to launch a setup wizard::
    obs-streamdeck-ctl setup
 
 Using the Scripts
------------------
+*****************
 
 All scripts are launched by the same command line program::
 
@@ -100,7 +100,7 @@ Where SCRIPT_NAME is one of the following:
 * `setup`_
 
 start_stop
-++++++++++
+----------
 
 Start or Stop live streaming, and if Twitch chat safety features are enabled,
 toggle these.  Safety features may put chat into Subscriber or Follower only
@@ -112,32 +112,32 @@ before using this function to stop the stream, it may disable that mode when
 you are offline.
 
 mute_mic
-++++++++
+--------
 
 Toggle the mute function on your Microphone input source. If you use a
 different Microphone source to the default you can select that with the setup
 wizard.
 
 mute_desk
-+++++++++
+---------
 
 Toggle the mute function on your Desktop Audio input source. If you use a
 different Desktop Audio source to the default you can select that with the setup
 wizard.
 
 mute_all
-++++++++
+--------
 
 Toggle the mute function on both the Desktop and Microphone Audio sources
 
 scene X
-+++++++
+-------
 
 Switch to Scene X in OBS Studio. X is the number of the Scene in the Scene
 List, counting down from the top and starting with 1.
 
 live_safety
-+++++++++++
+-----------
 
 Sadly, people have taken to "Hate Raids" on Twitch, where your chat can be
 overwhelmed with hateful messages from multiple bot accounts. These bot
@@ -157,7 +157,7 @@ running Live Safety again could leave your web overlay services disabled.
 
 
 setup
-+++++
+-----
 
 Launch the setup wizard, see Initial Setup for details
 
@@ -168,3 +168,4 @@ Footnotes
 .. [2] Pip is a package manager and should be included when you install
        Python. Some Linux distributions may not include pip automatically and it
        may have to be installed from your Linux distribution package manager
+
