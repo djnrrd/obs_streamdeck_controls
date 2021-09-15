@@ -14,6 +14,7 @@ import json
 from functools import partial
 from urllib.parse import urlencode
 from simpleobsws import ConnectionFailure
+import os
 
 
 def load_config():
@@ -23,7 +24,13 @@ def load_config():
     :rtype: ConfigParser
     """
     # Attempt to load the config file
-    config_dir = user_config_dir('obs-streamdeck-ctl')
+    config_dir = user_config_dir('obs-streamdeck-ctl', 'djnrrd')
+    if not os.path.isdir(config_dir):
+        # On windows appdirs always have to be %appdir%//author//appname so
+        # we have to create the author folder first
+        if not os.path.isdir(os.path.join(user_config_dir(), 'djnrrd')):
+            os.mkdir(os.path.join(user_config_dir(), 'djnrrd'))
+        os.mkdir(config_dir)
     config_file = os.path.join(config_dir, 'obs-streamdeck.ini')
     config = ConfigParser()
     config.read(config_file)
@@ -36,7 +43,7 @@ def save_config(config):
     :param config: The ConfigParser object
     :type config: ConfigParser
     """
-    config_dir = user_config_dir('obs-streamdeck-ctl')
+    config_dir = user_config_dir('obs-streamdeck-ctl', 'djnrrd')
     config_file = os.path.join(config_dir, 'obs-streamdeck.ini')
     if not all([os.path.exists(config_dir), os.path.isdir(config_dir)]):
         os.mkdir(config_dir)
@@ -800,7 +807,6 @@ class LaunchTwitch(SetupPage):
         config = self.controller.obs_config
         config['twitch']['oauth_token'] = return_object['#access_token']
         config['twitch']['channel'] = self.twitch_channel.get()
-        save_config(config)
         next_button_path = 'main_frame.launchtwitch.bottom_frame.next'
         self.controller.nametowidget(next_button_path)['state'] = 'active'
         self.controller.show_frame('StartStopOptions')
