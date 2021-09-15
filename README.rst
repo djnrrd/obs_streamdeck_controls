@@ -43,7 +43,7 @@ Download the required release from the `releases page <https://github
 .com/djnrrd/obs_streamdeck_controls/releases>`_ or clone the git repository
 to obtain the main branch::
 
-    git clone https://github.com/djnrrd/obs_streamdeck_controls.git
+ git clone https://github.com/djnrrd/obs_streamdeck_controls.git
 
 Installing
 ----------
@@ -52,20 +52,37 @@ Windows users need more documentation, `but this guide <https://projects
 .raspberrypi.org/en/projects/using-pip-on-windows>`_ should help.
 
 Change directory into the downloaded folder and install locally via pip. It
-is recommended that you use the --user flag to install in your user directory.::
+is recommended that you use the ``--user`` flag to install in your user
+directory.::
 
-   cd obs_streamdeck_controls
-   pip install --user --use-feature=in-tree-build .
+ cd obs_streamdeck_controls
+ pip install --user --use-feature=in-tree-build .
 
 Post Install
 ------------
 
+Linux
+^^^^^
+
 This will install the command line program ``obs-streamdeck-ctl`` to your
 ``$HOME/.local/bin`` folder. Add::
 
-   PATH=$PATH:$HOME/.local/bin
+ PATH=$PATH:$HOME/.local/bin
 
 to your ``.bashrc`` file, if you haven't already.
+
+Windows
+^^^^^^^
+
+This will install ``obs-streamdeck-ctl.exe`` to your
+``C:\Users\%USERNAME%\AppData\Roaming\Python\Python39\Scripts`` folder and you
+may see an error regarding this when you install.
+
+You can add this to your path with the following command::
+
+ setx PATH "C:\Users\%USERNAME%\AppData\Roaming\Python\Python39\Scripts\;%PATH%"
+
+Restart your computer to make sure that the %PATH% is loaded correctly
 
 Using
 =====
@@ -87,7 +104,7 @@ Using the Scripts
 
 All scripts are launched by the same command line program::
 
-   obs-streakdeck-ctl SCRIPT_NAME
+   obs-streamdeck-ctl SCRIPT_NAME
 
 Where SCRIPT_NAME is one of the following:
 
