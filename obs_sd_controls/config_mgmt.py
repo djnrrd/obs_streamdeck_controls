@@ -1059,8 +1059,10 @@ class AdditionalSafetyOptions(SetupPage):
         config = self.controller.obs_config
         None if config.has_section('additional') else \
             config.add_section('additional')
-        self.ad_check_value.set(eval(config['additional']['advert']))
-        self.marker_check_value.set(eval(config['additional']['marker']))
+        if config.has_option('additional', 'advert'):
+            self.ad_check_value.set(eval(config['additional']['advert']))
+        if config.has_option('additional', 'marker'):
+            self.marker_check_value.set(eval(config['additional']['marker']))
 
 
 class SetupComplete(SetupPage):
