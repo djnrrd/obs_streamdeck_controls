@@ -1029,7 +1029,7 @@ class AdditionalSafetyOptions(SetupPage):
         footers = (self.update_additional,
                    lambda: self.controller.show_frame('LiveSafetyOptions'))
         self.ad_check_value = tk.BooleanVar()
-        self.marker_check_value = tk.BooleanVar()
+        self.clear_chat_check_value = tk.BooleanVar()
         super().__init__(parent, controller, name, headers, footers)
         self.load_additional()
 
@@ -1040,8 +1040,8 @@ class AdditionalSafetyOptions(SetupPage):
                                 text=ti.ADDITIONAL_AD_CHECK,
                                 variable=self.ad_check_value)
         marker_chk = tk.Checkbutton(self.middle_frame,
-                                    text=ti.ADDITIONAL_MARKER_CHECK,
-                                    variable=self.marker_check_value)
+                                    text=ti.ADDITIONAL_CLEAR_CHECK,
+                                    variable=self.clear_chat_check_value)
         ad_chk.grid(row=0, column=0, sticky='nw', padx=10)
         marker_chk.grid(row=1, column=0, sticky='nw', padx=10)
         self.middle_frame.grid_rowconfigure(0, weight=0)
@@ -1055,7 +1055,8 @@ class AdditionalSafetyOptions(SetupPage):
         None if config.has_section('additional') else \
             config.add_section('additional')
         config['additional']['advert'] = str(self.ad_check_value.get())
-        config['additional']['marker'] = str(self.marker_check_value.get())
+        config['additional']['clear_chat'] = \
+            str(self.clear_chat_check_value.get())
         self.controller.show_frame('SetupComplete')
 
     def load_additional(self):
@@ -1067,8 +1068,9 @@ class AdditionalSafetyOptions(SetupPage):
             config.add_section('additional')
         if config.has_option('additional', 'advert'):
             self.ad_check_value.set(eval(config['additional']['advert']))
-        if config.has_option('additional', 'marker'):
-            self.marker_check_value.set(eval(config['additional']['marker']))
+        if config.has_option('additional', 'clear_chat'):
+            self.clear_chat_check_value.set(
+                eval(config['additional']['clear_chat']))
 
 
 class SetupComplete(SetupPage):

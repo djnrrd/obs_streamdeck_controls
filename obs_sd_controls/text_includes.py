@@ -57,7 +57,7 @@ LIVE_SAFETY_CHECK = 'Enable Live Safety features?'
 ADDITIONAL_HEADING = 'Additional Live Safety Features'
 ADDITIONAL_TEXT = 'The Live Safety function may also do the following:'
 ADDITIONAL_AD_CHECK = 'Play an advert'
-ADDITIONAL_MARKER_CHECK = 'Add a stream marker'
+ADDITIONAL_CLEAR_CHECK = 'Clear chat history'
 
 
 SAFETY_EMOTE = 'Enable emote only mode additionally'
