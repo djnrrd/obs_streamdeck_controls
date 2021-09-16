@@ -1,5 +1,12 @@
 from irc.bot import SingleServerIRCBot
+import logging
+import sys
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logging_handler = logging.StreamHandler(stream=sys.stdout)
+logging_handler.setLevel(logging.DEBUG)
+logger.addHandler(logging_handler)
 
 class TwitchSafetyBot(SingleServerIRCBot):
 
@@ -132,10 +139,9 @@ class TwitchLiveSafetyBot(TwitchSafetyBot):
             if all([eval(room_tags['followers-only']) < 0,
                     not eval(room_tags['subs-only'])]):
                 if self.advert:
-                    connection.privmsg(event.target, '/commercial 1m')
+                    connection.privmsg(event.target, '/commercial 60')
                 if self.marker:
-                    connection.privmsg(event.target, '/marker OBS Streamdeck '
-                                                     'CTL safety enabled')
+                    connection.privmsg(event.target, '/marker')
         super().on_roomstate(connection, event)
 
 
