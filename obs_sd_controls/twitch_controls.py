@@ -1,12 +1,5 @@
 from irc.bot import SingleServerIRCBot
-import logging
-import sys
 
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-logging_handler = logging.StreamHandler(stream=sys.stdout)
-logging_handler.setLevel(logging.DEBUG)
-logger.addHandler(logging_handler)
 
 class TwitchSafetyBot(SingleServerIRCBot):
 
