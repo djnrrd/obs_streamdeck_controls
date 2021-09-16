@@ -13,6 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../src/'))
+from obs_sd_controls.conf import VERSION
 
 
 # -- Project information -----------------------------------------------------
@@ -22,7 +23,7 @@ copyright = '2021, DJ Nrrd'
 author = 'DJ Nrrd'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2.3'
+release = VERSION
 
 
 # -- General configuration ---------------------------------------------------
