@@ -132,10 +132,10 @@ def live_safety_button(config, ws_password):
             config.has_option('live_safety', 'follow_time') else ''
         advert = eval(config['additional']['advert']) if \
             config.has_option('additional', 'advert') else False
-        marker = eval(config['additional']['marker']) if \
-            config.has_option('additional', 'marker') else False
+        clear_chat = eval(config['additional']['clear_chat']) if \
+            config.has_option('additional', 'clear_chat') else False
         live_safety(username, token, enabled, emote_mode, method,
-                    follow_time, advert, marker)
+                    follow_time, advert, clear_chat)
 
 
 def main():

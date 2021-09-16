@@ -124,11 +124,11 @@ class TwitchLiveSafetyBot(TwitchSafetyBot):
     """
 
     def __init__(self, nickname, token, enabled, emote_mode, method,
-                 follow_time, advert, marker):
+                 follow_time, advert, clear_chat):
         super().__init__(nickname, token, enabled, emote_mode, method,
                          follow_time)
         self.advert = advert
-        self.marker = marker
+        self.clear_chat = clear_chat
 
     def on_roomstate(self, connection, event):
         """Override the parent event handler to run the live related features
@@ -140,8 +140,8 @@ class TwitchLiveSafetyBot(TwitchSafetyBot):
                     not eval(room_tags['subs-only'])]):
                 if self.advert:
                     connection.privmsg(event.target, '/commercial 60')
-                if self.marker:
-                    connection.privmsg(event.target, '/marker')
+                if self.clear_chat:
+                    connection.privmsg(event.target, '/clear')
         super().on_roomstate(connection, event)
 
 
@@ -153,7 +153,7 @@ def start_stop_safety(username, token, enabled, emote_mode, method,
 
 
 def live_safety(username, token, enabled, emote_mode, method, follow_time,
-                advert, marker):
+                advert, clear_chat):
     safety_bot = TwitchLiveSafetyBot(username, token, enabled, emote_mode,
-                                     method, follow_time, advert, marker)
+                                     method, follow_time, advert, clear_chat)
     safety_bot.start()
