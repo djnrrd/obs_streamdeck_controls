@@ -48,7 +48,7 @@ to obtain the main branch::
 Pre Installation
 ----------------
 
-Register a new application on `dev.twitch.com<https://dev.twitch.com>`_. Then
+Register a new application on `dev.twitch.com. <https://dev.twitch.com>`_ Then
 edit the file ``obs_sd_controls/conf.py`` and update the CLIENT_ID variable
 with your own Client ID.
 
