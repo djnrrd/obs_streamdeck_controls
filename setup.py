@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='obs_streamdeck_controls',
-    version='0.2.2',
+    version='0.2.3',
     install_requires=['simpleobsws', 'appdirs', 'irc'],
     packages=['obs_sd_controls'],
     entry_points={
