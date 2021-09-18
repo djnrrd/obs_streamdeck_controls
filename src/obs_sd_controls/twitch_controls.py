@@ -1,37 +1,37 @@
 from irc.bot import SingleServerIRCBot
+from . import conf
 
 
 class TwitchSafetyBot(SingleServerIRCBot):
+    """A simple bot that logs into the twitch user's own channel to run a
+    batch of commands before logging out again.
 
-    VERSION = '0.2.0'
+    :param nickname: The user's twitch logon
+    :type nickname: str
+    :param token: The user's OAUTH token
+    :type token: str
+    :param enabled: If this safety mode is enabled
+    :type enabled: bool
+    :param emote_mode: If Emote Only chat is part of the requested safety
+        mode
+    :type emote_mode: bool
+    :param method: The preferred chat lockdown method
+    :type method: str
+    :param follow_time: If the lockdown method is Followers only, the length
+        of follow time allowed before a user can chat
+    :type follow_time: str
+    :cvar VERSION: IRC Bot Version
+    :cvar channel: The user's chat channel
+    :cvar enabled: If this safety mode is enabled
+    :cvar emote_mode: If Emote Only chat is part of the requested safety mode
+    :cvar method: The preferred chat lockdown method
+    :cvar follow_time: If the lockdown method is Followers only, the length
+        of follow time allowed before a user can chat
+    """
+    VERSION = conf.VERSION
 
     def __init__(self, nickname, token, enabled, emote_mode, method,
                  follow_time):
-        """A simple bot that logs into the twitch user's own channel to run a
-        batch of commands before logging out again.
-
-        :param nickname: The user's twitch logon
-        :type nickname: str
-        :param token: The user's OAUTH token
-        :type token: str
-        :param enabled: If this safety mode is enabled
-        :type enabled: bool
-        :param emote_mode: If Emote Only chat is part of the requested safety
-            mode
-        :type emote_mode: bool
-        :param method: The preferred chat lockdown method
-        :type method: str
-        :param follow_time: If the lockdown method is Followers only,
-            the length of follow time allowed before a user can chat
-        :type follow_time: str
-        :cvar channel: The user's chat channel
-        :cvar enabled: If this safety mode is enabled
-        :cvar emote_mode: If Emote Only chat is part of the requested safety
-            mode
-        :cvar method: The preferred chat lockdown method
-        :cvar follow_time: If the lockdown method is Followers only, the length
-            of follow time allowed before a user can chat
-        """
         token = f"oauth:{token}"
         super().__init__([('irc.twitch.tv', 6667, token)], nickname,
                          nickname)
@@ -51,6 +51,8 @@ class TwitchSafetyBot(SingleServerIRCBot):
         connection.join(self.channel)
 
     def on_roomstate(self, connection, event):
+        """After receiving the ROOMSTATE tags from Twitch IRC, toggle between
+        the requested safety modes before gracefully logging out of IRC"""
         if self.enabled:
             # We are performing a safety action
             room_tags = dict([(x['key'], x['value']) for x in event.tags])
