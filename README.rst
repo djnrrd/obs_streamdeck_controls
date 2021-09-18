@@ -22,8 +22,7 @@ Features
 Installation
 ============
 
-OBS Streamdeck CTL is written in Python, and is planned to be published to
-PyPi
+OBS Streamdeck CTL is written in Python, and is available via pip.
 
 Requirements
 ************
@@ -32,6 +31,19 @@ Requirements
 * Pip [2]_ and Internet access
 * OBS Studio [1]_
 * `OBS WebSockets API <https://github.com/Palakis/obs-websocket>`_
+
+Installing
+**********
+
+Open a command prompt and type the following::
+
+ pip install obs-streamdeck-controls
+
+Linux and Mac users may want to add the ``--user`` flag to install the
+package and its requirements to your user directories instead of the system
+directories.
+
+Now check the `Post Install`_ instructions
 
 Installing From Source
 **********************
@@ -49,14 +61,11 @@ Pre Installation
 ----------------
 
 Register a new application on `dev.twitch.com. <https://dev.twitch.com>`_ Then
-edit the file ``obs_sd_controls/conf.py`` and update the CLIENT_ID variable
+edit the file ``src/obs_sd_controls/conf.py`` and update the CLIENT_ID variable
 with your own Client ID.
 
 Installing
 ----------
-
-Windows users need more documentation, `but this guide <https://projects
-.raspberrypi.org/en/projects/using-pip-on-windows>`_ should help.
 
 Change directory into the downloaded folder and install locally via pip. It
 is recommended that you use the ``--user`` flag to install in your user
@@ -66,30 +75,36 @@ directory.::
  pip install --user --use-feature=in-tree-build .
 
 Post Install
-------------
+************
+
+Windows
+-------
+
+You will likely see a WARNING message, similar to the following
+
+``WARNING: The script obs-streamdeck-ctl.exe is installed in
+'C:\Users\%USERNAME%\AppData\Local\Packages\PythonSoftwareFoundation.Python.3
+.9_qbz5n2kfra8p0\LocalCache\local-packages\Python39\Scripts' which is not on PATH``
+
+Add this to your path with the following command::
+
+ setx PATH "C:\Users\%USERNAME%\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.9_qbz5n2kfra8p0\LocalCache\local-packages\Python39\Scripts;%PATH%"
+
+*Make sure that you copy and paste the path from your error message, and
+ensure that ;%PATH% is added to the end*
+
+Restart your computer to make sure that the %PATH% is loaded correctly
 
 Linux
-^^^^^
+-----
 
-This will install the command line program ``obs-streamdeck-ctl`` to your
-``$HOME/.local/bin`` folder. Add::
+If you installed with the ``--user`` flags, the command line program
+``obs-streamdeck-ctl`` will be installed to your ``$HOME/.local/bin`` folder.
+Add::
 
  PATH=$PATH:$HOME/.local/bin
 
 to your ``.bashrc`` file, if you haven't already.
-
-Windows
-^^^^^^^
-
-This will install ``obs-streamdeck-ctl.exe`` to your
-``C:\Users\%USERNAME%\AppData\Roaming\Python\Python39\Scripts`` folder and you
-may see an error regarding this when you install.
-
-You can add this to your path with the following command::
-
- setx PATH "C:\Users\%USERNAME%\AppData\Roaming\Python\Python39\Scripts\;%PATH%"
-
-Restart your computer to make sure that the %PATH% is loaded correctly
 
 Using
 =====
