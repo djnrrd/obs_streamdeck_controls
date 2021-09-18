@@ -3,3 +3,5 @@ sphinx
 appdirs
 irc
 sphinx-rtd-theme
+build
+twine

@@ -1,0 +1,3 @@
+CLIENT_ID = 'YOUR CLIENT ID'
+REDIRECT_URI = 'http://localhost:8000'
+VERSION = '0.2.3'

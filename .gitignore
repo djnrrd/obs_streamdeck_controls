@@ -5,3 +5,5 @@
 /build/
 /.idea/
 */__pycache__/
+/dist/
+/src/obs_streamdeck_controls.egg-info/
