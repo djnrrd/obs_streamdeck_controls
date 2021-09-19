@@ -1091,7 +1091,8 @@ class SetupComplete(SetupPage):
     def __init__(self, parent, controller, name=''):
         headers = (ti.COMPLETE_HEADING, ti.COMPLETE_TEXT)
         footers = (self.complete,
-                   lambda: self.controller.show_frame('LaunchTwitch'),
+                   lambda:
+                   self.controller.show_frame('AdditionalSafetyOptions'),
                    True)
         super().__init__(parent, controller, name, headers, footers)
 
