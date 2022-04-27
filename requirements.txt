@@ -1,4 +1,4 @@
-simpleobsws
+simpleobsws==0.0.7
 sphinx
 appdirs
 irc
