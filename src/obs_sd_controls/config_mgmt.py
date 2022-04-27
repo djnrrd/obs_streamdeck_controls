@@ -13,7 +13,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 from functools import partial
 from urllib.parse import urlencode
-from simpleobsws import ConnectionFailure
+from simpleobsws import MessageTimeout
 import os
 
 
@@ -472,7 +472,7 @@ class ObsWsPass(SetupPage):
             self.controller.frames['ObsAudioSources']. \
                 load_obs_sources(obs_sources)
             self.controller.show_frame('ObsAudioSources')
-        except (ConnectionRefusedError, NameError, ConnectionFailure):
+        except (ConnectionRefusedError, NameError, MessageTimeout):
             self.controller.clear_busy()
             tk_mb.showwarning(title=ti.OBSWSPASS_WARN_HEADER,
                               message=ti.OBSWSPASS_WARN)
