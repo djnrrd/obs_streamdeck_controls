@@ -10,10 +10,11 @@ def _load_obs_ws(ws_password=''):
     :return: The simpleobsws object
     :rtype: simpleobsws.obsws
     """
+    obs_url = 'ws://localhost:4455'
     if ws_password:
-        ws = simpleobsws.obsws(password=ws_password)
+        ws = simpleobsws.WebSocketClient(obs_url, password=ws_password)
     else:
-        ws = simpleobsws.obsws()
+        ws = simpleobsws.WebSocketClient(obs_url)
     return ws
 
 
@@ -27,8 +28,10 @@ async def _ws_toggle_mute(source, ws):
     """
     # Make the connection to obs-websocket
     await ws.connect()
-    data = {'source': source}
-    await ws.call('ToggleMute', data)
+    await ws.wait_until_identified()
+    data = {'inputName': source}
+    request = simpleobsws.Request('ToggleInputMute', requestData=data)
+    await ws.call(request)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
@@ -46,12 +49,14 @@ async def _ws_get_scene_list(ws):
     """
     # Make the connection to obs-websocket
     await ws.connect()
-    result = await ws.call('GetSceneList')
+    await ws.wait_until_identified()
+    request = simpleobsws.Request('GetSceneList')
+    result = await ws.call(request)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
     await ws.disconnect()
-    return result
+    return result.responseData
 
 
 async def _ws_set_scene(scene, ws):
@@ -64,8 +69,10 @@ async def _ws_set_scene(scene, ws):
     """
     # Make the connection to obs-websocket
     await ws.connect()
-    data = {'scene-name': scene}
-    await ws.call('SetCurrentScene', data)
+    await ws.wait_until_identified()
+    data = {'sceneName': scene}
+    request = simpleobsws.Request('SetCurrentProgramScene', requestData=data)
+    await ws.call(request)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
@@ -80,7 +87,9 @@ async def _ws_start_stop_stream(ws):
     """
     # Make the connection to obs-websocket
     await ws.connect()
-    await ws.call('StartStopStreaming')
+    await ws.wait_until_identified()
+    request = simpleobsws.Request('ToggleStream')
+    await ws.call(request)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
@@ -99,13 +108,15 @@ async def _ws_get_source_settings(source, ws):
     """
     # Make the connection to obs-websocket
     await ws.connect()
-    data = {'sourceName': source}
-    result = await ws.call('GetSourceSettings', data)
+    await ws.wait_until_identified()
+    data = {'inputName': source}
+    request = simpleobsws.Request('GetInputSettings', requestData=data)
+    result = await ws.call(request)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
     await ws.disconnect()
-    return result
+    return result.responseData
 
 
 async def _ws_set_source_settings(source, settings, ws):
@@ -125,8 +136,10 @@ async def _ws_set_source_settings(source, settings, ws):
     """
     # Make the connection to obs-websocket
     await ws.connect()
-    data = {'sourceName': source, 'sourceSettings': settings}
-    result = await ws.call('SetSourceSettings', data)
+    await ws.wait_until_identified()
+    data = {'inputName': source, 'inputSettings': settings}
+    request = simpleobsws.Request('SetInputSettings', requestData=data)
+    result = await ws.call(request)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
@@ -144,12 +157,14 @@ async def _ws_get_all_sources(ws):
     """
     # Make the connection to obs-websocket
     await ws.connect()
-    result = await ws.call('GetSourcesList')
+    await ws.wait_until_identified()
+    request = simpleobsws.Request('GetInputList')
+    result = await ws.call(request)
     # Clean things up by disconnecting. Only really required in a few specific
     # situations, but good practice if you are done making requests or listening
     # to events.
     await ws.disconnect()
-    return result
+    return result.responseData
 
 
 def mute_audio_source(source, ws_password):
@@ -179,8 +194,9 @@ def set_scene(scene_number, ws_password):
     scene_list = loop.run_until_complete(_ws_get_scene_list(ws))
     # Adjust for zero indexing
     scene_number = scene_number - 1
-    new_scene = scene_list['scenes'][scene_number]['name']
+    new_scene = scene_list['scenes'][scene_number]['sceneName']
     loop.run_until_complete(_ws_set_scene(new_scene, ws))
+    return scene_list
 
 
 def start_stop_stream(ws_password):
@@ -207,7 +223,7 @@ def get_source_settings(source, ws_password):
     ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
     settings = loop.run_until_complete(_ws_get_source_settings(source, ws))
-    settings = settings['sourceSettings']
+    settings = settings['inputSettings']
     return settings
 
 
@@ -239,4 +255,4 @@ def get_all_sources(ws_password):
     ws = _load_obs_ws(ws_password)
     loop = asyncio.get_event_loop()
     results = loop.run_until_complete(_ws_get_all_sources(ws))
-    return results['sources']
+    return results
