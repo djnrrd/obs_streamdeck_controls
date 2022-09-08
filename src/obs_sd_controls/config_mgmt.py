@@ -13,7 +13,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 from functools import partial
 from urllib.parse import urlencode
-from simpleobsws import ConnectionFailure
+from simpleobsws import MessageTimeout
 import os
 
 
@@ -472,7 +472,7 @@ class ObsWsPass(SetupPage):
             self.controller.frames['ObsAudioSources']. \
                 load_obs_sources(obs_sources)
             self.controller.show_frame('ObsAudioSources')
-        except (ConnectionRefusedError, NameError, ConnectionFailure):
+        except (ConnectionRefusedError, NameError, MessageTimeout):
             self.controller.clear_busy()
             tk_mb.showwarning(title=ti.OBSWSPASS_WARN_HEADER,
                               message=ti.OBSWSPASS_WARN)
@@ -572,7 +572,7 @@ class ObsAudioSources(SetupPage):
     def load_obs_sources(self, obs_sources):
         """Load the OBS Sources from the previous frame into the Listbox"""
         self.obs_sources.delete(0, 'end')
-        sources = [x['name'] for x in obs_sources]
+        sources = [x['inputName'] for x in obs_sources]
         default_sources = (self.mic_source.get(), self.desktop_source.get())
         for source in sources:
             if source not in default_sources:
